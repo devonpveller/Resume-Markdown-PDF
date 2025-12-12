@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Preview - Devon Veller</title>
+    <link rel="stylesheet" href="source/resume.css">
+    <link rel="stylesheet" href="source/settings.css">
+    <style>
+        /* Additional preview-specific styles */
+        body {
+            max-width: 8.5in;
+            margin: 0 auto;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        #resume-container {
+            background: white;
+            padding: 0.5in;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-height: 11in;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        #error {
+            color: red;
+            padding: 20px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">Loading resume...</div>
+    <div id="error"></div>
+    <div id="resume-container"></div>
+
+    <!-- Markdown parser from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        async function loadResume() {
+            try {
+                // Fetch the markdown file
+                const response = await fetch('source/resume.md');
+                if (!response.ok) throw new Error('Failed to load resume.md');
+
+                let markdown = await response.text();
+
+                // Parse resume.lol variables
+                const variables = {};
+
+                // Extract @REDACTED value first
+                const redactedMatch = markdown.match(/@REDACTED=(true|false)/);
+                const useRedacted = redactedMatch && redactedMatch[1] === 'true';
+
+                // Extract all variable declarations (handle potential \r\n line endings)
+                const lines = markdown.split(/\r?\n/);
+                for (const line of lines) {
+                    const varMatch = line.match(/^@(\w+)=(.+)\|\|(.+)$/);
+                    if (varMatch) {
+                        const [, varName, normalValue, redactedValue] = varMatch;
+                        variables[varName] = useRedacted ? redactedValue.trim() : normalValue.trim();
+                    }
+                }
+
+                console.log('Extracted variables:', variables); // Debug log
+
+                // Replace {VARIABLE} with values BEFORE removing declarations
+                markdown = markdown.replace(/\{(\w+)\}/g, (matchStr, varName) => {
+                    const replacement = variables[varName];
+                    console.log(`Replacing {${varName}} with:`, replacement); // Debug log
+                    return replacement || matchStr;
+                });
+
+                // Remove variable declarations from markdown
+                markdown = markdown.replace(/^@\w+=.+$/gm, '');
+
+                // Remove HTML comments
+                markdown = markdown.replace(/<!--[\s\S]*?-->/g, '');
+
+                    // Configure marked to handle HTML
+                    marked.setOptions({
+                        breaks: false,
+                        gfm: true
+                    });
+
+                // Convert markdown to HTML
+                let html = marked.parse(markdown);
+
+                // Fix em-dash entities
+                html = html.replace(/&mdash;/g, '—');
+
+                // Insert into container
+                document.getElementById('resume-container').innerHTML = html;
+                document.getElementById('loading').style.display = 'none';
+
+            } catch (error) {
+                console.error('Error loading resume:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Error loading resume: ' + error.message;
+            }
+        }
+
+        // Load resume when page loads
+        window.addEventListener('DOMContentLoaded', loadResume);
+    </script>
+</body>
+
+</html>

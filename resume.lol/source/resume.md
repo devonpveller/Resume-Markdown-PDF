@@ -6,7 +6,7 @@ Formatted for resume.lol
 @NAME=Devon Veller||Devon V.
 @EMAIL=devonpveller@gmail.com||devonpveller@gmail.com
 @PHONE=(954) 478-9812||(954) 478-9812
-@LOCATION=United States
+<!-- @LOCATION=United States -->
 @WEBSITE=github.com/devonpveller||example.com
 
 # {NAME}
@@ -21,7 +21,7 @@ Formatted for resume.lol
 
 <ul>
 <li><a href="https://artstation.com/devonpveller">https://artstation.com/devonpveller</a></li>
-<li>{LOCATION}</li>
+<!-- <li>{LOCATION}</li> -->
 </ul>
 
 </div>
