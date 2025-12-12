@@ -105,4 +105,3 @@ ul {
 .headerInfo>ul>li:not(:last-child):after {
     content: "•";
     margin-left: 8px;
-}
