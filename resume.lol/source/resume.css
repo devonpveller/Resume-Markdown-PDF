@@ -18,6 +18,15 @@ body {
     padding-bottom: 6px;
 }
 
+hr.pagebreak {
+    page-break-after: always;
+    visibility: hidden;
+    margin: 0;
+    padding: 0;
+    height: 0;
+    border: none;
+}
+
 /* ordering of content */
 h1 {
     order: 0;
@@ -66,6 +75,8 @@ h3 {
     font-size: 15px;
     padding: 0;
     justify-content: space-between;
+    page-break-inside: avoid;
+    page-break-after: avoid;
 }
 
 p {
