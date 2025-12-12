@@ -70,7 +70,7 @@ Led end-to-end development of role-based AR radiological training for 7+ concurr
 Technologies: Unity, OpenXR, C#, NGO (Netcode for GameObjects), Unity Services, AR, Magic Leap 2
 <div class="newline"></div>
 
-
+<div style="page-break-before: always;"></div>
 
 ### DOE &mdash; SMART Interactive Scenario <span class="spacer"></span> 2023
 
