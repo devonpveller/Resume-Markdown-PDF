@@ -46,11 +46,16 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script>
+        let lastModified = null;
+
         async function loadResume() {
             try {
                 // Fetch the markdown file
                 const response = await fetch('source/resume.md');
                 if (!response.ok) throw new Error('Failed to load resume.md');
+
+                // Store the last modified time
+                lastModified = response.headers.get('Last-Modified');
 
                 let markdown = await response.text();
 
@@ -110,8 +115,27 @@
             }
         }
 
+        // Check for file changes
+        async function checkForUpdates() {
+            try {
+                const response = await fetch('source/resume.md', { method: 'HEAD' });
+                const currentModified = response.headers.get('Last-Modified');
+
+                if (lastModified && currentModified && lastModified !== currentModified) {
+                    console.log('File changed, reloading...');
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error checking for updates:', error);
+            }
+        }
+
         // Load resume when page loads
-        window.addEventListener('DOMContentLoaded', loadResume);
+        window.addEventListener('DOMContentLoaded', () => {
+            loadResume();
+            // Check for updates every 2 seconds
+            setInterval(checkForUpdates, 2000);
+        });
     </script>
 </body>
 
