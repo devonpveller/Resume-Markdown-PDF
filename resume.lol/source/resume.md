@@ -34,9 +34,22 @@ Formatted for resume.lol
 Seasoned game developer with 14 years of experience uniting art, engineering, and systems design to deliver breakthrough interactive solutions. Having executed 300+ products for Y12, Amazon, and Boeing, Devon excels at front-end gameplay systems, back-end architecture, and real-time performance optimization in serious games. Devon thrives at the intersection of R&D and cross-disciplinary collaboration, leveraging emerging technologies to push boundaries in interactive training and entertainment. Ready to drive innovation and shape engaging user experiences as a versatile technical and creative lead.
 
 ## Experience
+### DOE &mdash; Senseglove Glovebox Scenario <span class="spacer"></span> 2025
+
+*Delivered | Lead Developer, Technical Artist, & Art Direction*
+<div class="newline"></div>
+
+Responsible for the implementation and direction of art assets, along with leading the development of a platform conversion of the HatpX device to the Senseglove system. Guided the implementation of MR capabilities on the VARJO platform within the delivered content by our UCF team within ORETTC (DOE) facilities. 
+
+<div class="newline"></div>
+Technologies: Unreal Engine, C++, HaptX SDK, Multiplayer Networking
+<div class="newline"></div>
+
 ### DOE &mdash; ARTTX - Alarm Response Tactical Training Exercise <span class="spacer"></span> Jan &mdash; Sept 2024
+
 *Delivered | Lead Developer, Art Director, Project Manager*
 <div class="newline"></div>
+
 Developed and lead the design and production of a role-based, multidisciplinary AR-driven Radiological training experience supporting 20 users, leveraging Unity services and OpenXR, high performance on low-power devices; delivered a dynamic multi-platform solution praised by the client as "This is solid."
 
 - Developed an approach to utilizing an LLM for development achieving 5.6x faster load times and 25x--6,000x performance gains in custom solutions reducing overall development time by 25%
@@ -48,42 +61,57 @@ Developed and lead the design and production of a role-based, multidisciplinary 
 - Developed a no-code narrative-first scenario authoring approach using a custom command framework for narrative events and dynamic triggers, while maintaining an editable, expandable, and layman-friendly system within the editor
 - Facilitated goal alignment and maintained a positive client relationship through clear, consistent weekly communication
 
+<div class="newline"></div>
 Technologies: Unity, OpenXR, C#, NGO (Netcode for GameObjects), Unity Services, AR, LLM Integration
 <div class="newline"></div>
 
 ### DOE &mdash; SMART Interactive Scenario <span class="spacer"></span> 2023
 
-*Delivered | Game Designer & Lead Developer*
+*Delivered | Lead Developer, Game Designer & Lead Artist*
+
 <div class="newline"></div>
 Conceptualized product and lead a team of developers and artists to create a customer-facing web portal, enabling remote scenario editing and authoring of real-time Unreal content.
 
+- Architected and implemented a WebSocket-powered backend framework with JSON serialization to enable real-time synchronization of dynamic AR radiological scenarios, optimizing data ingestion into Unreal Engine with zero latency; enabling instantaneous simulation updates for radiation awareness and training
+- Led the design and implementation of an AI-powered artist pipeline that reduced asset creation time by 25% by automating 3D cityscape generation from 2D depth maps—enabling rapid, scalable content creation for a customer-facing web portal used in real-time Unreal Engine scenario authoring
+- Created and designed the UX/UI for scenario selection and iconography deployed on both apple and android devices as an AR experience
+- Led the development of the front-end web-portal using React, enabling users to create, edit, and manage interactive scenarios with real-time updates to the Unreal Engine application
+
+<div class="newline"></div>
 Technologies: Unreal Engine, C++, Web Portal Integration
 <div class="newline"></div>
 
 ### DOE &mdash; HaptX Glovebox Scenario <span class="spacer"></span> 2022 &mdash; 2023
 
-*Delivered | Technical Artist, Developer, & Art Direction*
+*Delivered | Technical Artist, Lead Developer, & Art Direction*
 <div class="newline"></div>
-Responsible for the implementation and direction of art assets, along with the development of a Glovebox digital twin system, supporting multiplayer and HaptX gloves.
 
+Responsible for the implementation and direction of art assets, along with the development of a Glovebox digital twin system, supporting multiplayer and the HaptX glove device.
+
+- Developed and created a dynamic physically based torque wrench real-time VR tool designed to be used with the HaptX glove system utilizing an AI guidance workflow saving development time by 20% while providing a reliable torque and attachment and release system.
+
+<div class="newline"></div>
 Technologies: Unreal Engine, C++, HaptX SDK, Multiplayer Networking
 <div class="newline"></div>
 
 ### DOE &mdash; Digital Twin Interactive Map <span class="spacer"></span> 2022 &mdash; 2023
 
-*Delivered | Lead Game Developer & Technical Artist*
+*Delivered | Lead Game Developer & Technical Artist, Art Direction*
+
 <div class="newline"></div>
 Responsible for the accuracy of art assets and their implementation, along with the design and development of interactions and features within the front-end and back-end utilizing Unreal Engine.
 
 - Created a data mapping pipeline to utilize client provided architectural documents, enabling autonomous updates of spatial information and dynamic structure labeling, all during the construction of the building
 - Created a user-centric navigation system, featuring dynamically generated paths between any 2 rooms with accessibility preference over 2 floors
 
+<div class="newline"></div>
 Technologies: Unreal Engine, C++, Data Pipeline, Pathfinding Algorithms, Blueprint
 <div class="newline"></div>
 
 ### VA &mdash; VAPPE <span class="spacer"></span> 2021 &mdash; 2023
 
 *Delivered | Lead Front-End Developer & Art Director*
+
 <div class="newline"></div>
 Designed and implemented art, front end gameplay interactions and engineered backend scenario authoring ingestion for a real-time scenario-based application, currently available on the Apple Store.
 
@@ -94,6 +122,7 @@ Designed and implemented art, front end gameplay interactions and engineered bac
 - Supported 60 scenarios, each comprising 30 - 60 steps, 46 interactable equipment pieces, and a narrator guiding every step
 - Ensured 508 compliance and delivered a dual-platform release on IOS and Web through VA servers, establishing a new standard for PPE training
 
+<div class="newline"></div>
 Technologies: Unity, C#, iOS, WebGL, CSV Parsing, 508 Compliance
 <div class="newline"></div>
 
