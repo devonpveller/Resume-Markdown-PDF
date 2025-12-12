@@ -57,13 +57,44 @@ When updating experience sections, maintain these highlight patterns:
 2. **VAPPE (2021-2023)** - iOS/WebGL PPE training, 60 scenarios, CSV ingestion, 508 compliance, Apple Store published
 3. **Digital Twin Interactive Map (2022-2023)** - Unreal Engine, pathfinding, data pipeline for architectural updates
 
-## Metrics and Impact Language
+## STAR Method for Resume Bullets
+
+**CRITICAL**: All resume bullet points in `resume.lol/source/resume.md` MUST follow the STAR method (Situation, Task, Action, Result) to transform generic duties into powerful, quantifiable achievements.
+
+### STAR Framework
+
+- **Situation**: Briefly set the context—the challenge or environment
+- **Task**: Define your specific responsibility or goal within that situation
+- **Action**: Describe the specific steps you took (use strong action verbs)
+- **Result**: Quantify the positive outcome or benefit (numbers are key!)
+
+### Formula: "Accomplished [X] as measured by [Y], by doing [Z]"
+
+### Examples of STAR-Formatted Bullets
+
+**Vague**: "Helped with marketing campaigns"
+**STAR**: "Launched three social media campaigns (Action) to boost brand awareness (Task), increasing follower engagement by 40% and generating 200+ qualified leads (Result) in one quarter"
+
+**Vague**: "Managed customer service"
+**STAR**: "Resolved customer issues (Task) during peak season (Situation), reducing complaint resolution time by 25% and improving customer satisfaction scores by 15 points (Result) through proactive communication and personalized solutions (Action)"
+
+### Requirements for Resume Bullets
+
+1. **Quantify Everything**: Use numbers, percentages, dollar amounts (e.g., "Increased sales by 15%")
+2. **Be Concise**: Aim for 1-2 lines per bullet; avoid lengthy paragraphs
+3. **Strong Action Verbs**: Start with: Developed, Engineered, Implemented, Designed, Increased, Reduced, Created, Optimized, Built, Led, Facilitated
+4. **Show Direct Contribution**: Use "I" mindset even in team settings
+5. **Include Technical Context**: Mention specific technologies, frameworks, or methodologies used
+6. **Focus on Impact**: Always end with measurable results or outcomes
+
+### Metrics and Impact Language
 
 Always include quantifiable metrics when describing achievements:
 - Performance improvements (e.g., "5.6x faster load times", "320% performance gain")
 - Time savings (e.g., "reduced development time by 25%")
 - User impact (e.g., "supporting 20 concurrent users with <50ms latency")
 - Process efficiency (e.g., "reducing art production hours by 40%")
+- Scale indicators (e.g., "60 scenarios", "300+ products", "20 concurrent users")
 
 ## Archive File Usage
 
