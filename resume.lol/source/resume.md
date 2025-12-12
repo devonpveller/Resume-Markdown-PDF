@@ -20,8 +20,8 @@ Formatted for resume.lol
 </ul>
 
 <ul>
-<li><a href="https://artstation.com/devonpveller">https://artstation.com/devonpveller</a></li>
-<li><a href="github.com/devonpveller">github.com/devonpveller</a></li>
+<li><a href="https://devonveller.artstation.com/">https://devonveller.artstation.com/</a></li>
+<li><a href="https://github.com/devonpveller">https://github.com/devonpveller</a></li>
 <!-- <li>{LOCATION}</li> -->
 </ul>
 
