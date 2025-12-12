@@ -26,20 +26,13 @@ Formatted for resume.lol
 
 </div>
 
-## About
+### Lead Game Developer, Artist & Interactive Designer, METIL <span class="spacer"></span> 2017 &mdash; Present
 
 Seasoned game developer with 14 years of experience uniting art, engineering, and systems design to deliver breakthrough interactive solutions. Having executed 300+ products for Y12, Amazon, and Boeing, Devon excels at front-end gameplay systems, back-end architecture, and real-time performance optimization in serious games. Devon thrives at the intersection of R&D and cross-disciplinary collaboration, leveraging emerging technologies to push boundaries in interactive training and entertainment. Ready to drive innovation and shape engaging user experiences as a versatile technical and creative lead.
 
 ## Experience
-
-### Lead Game Developer, Artist & Interactive Designer, METIL <span class="spacer"></span> 2017 &mdash; Present
-
-Mixed Emerging Technology Integration Lab
-
-**ARTTX -- Alarm Response Tactical Training Exercise** (Jan &mdash; Sept 2024)
-
+**DOE &mdash; ARTTX - Alarm Response Tactical Training Exercise** *Delivered* (Jan &mdash; Sept 2024)
 *Lead Developer, Art Director, Project Manager*
-
 Developed and lead the design and production of a role-based, multidisciplinary AR-driven Radiological training experience supporting 20 users, leveraging Unity services and OpenXR, high performance on low-power devices; delivered a dynamic multi-platform solution praised by the client as "This is solid."
 
 - Developed an approach to utilizing an LLM for development achieving 5.6x faster load times and 25x--6,000x performance gains in custom solutions reducing overall development time by 25%
