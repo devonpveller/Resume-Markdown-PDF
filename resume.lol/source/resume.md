@@ -119,6 +119,7 @@ Developed end to end, UX/UI design and art direction for real-time digital twin 
 <div class="newline"></div>
 Technologies: Unreal Engine, C++, Data Pipeline, Pathfinding Algorithms, Blueprint, iOS/Android
 <div class="newline"></div>
+<div style="page-break-before: always;"></div>
 
 ### VA &mdash; VAPPE <span class="spacer"></span> 2021 &mdash; 2023
 

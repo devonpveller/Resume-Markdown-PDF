@@ -21,6 +21,9 @@
             padding: 0.5in;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             min-height: 11in;
+            width: 8.5in;
+            box-sizing: border-box;
+            margin: 0 auto;
         }
 
         /* PDF export styles - remove padding when exporting */
@@ -187,25 +190,16 @@
             const element = document.getElementById('resume-container');
 
             const opt = {
-                margin: 0,
+                margin: [0, -1, 0, -1],  // Increased left margin to shift content right
                 filename: 'Resume-Devon-Veller.pdf',
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: {
-                    scale: 2,
+                    scale: 2,  // Balanced scale for proper sizing
                     useCORS: true,
                     allowTaint: true,
                     letterRendering: true,
                     logging: false,
-                    foreignObjectRendering: false,
-                    onclone: (clonedDoc) => {
-                        // Force font reload in cloned document
-                        const style = clonedDoc.createElement('style');
-                        style.textContent = `
-                            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=block');
-                            * { font-family: Inter, system-ui, -apple-system, sans-serif !important; }
-                        `;
-                        clonedDoc.head.appendChild(style);
-                    }
+                    foreignObjectRendering: true  // Use SVG rendering for better font fidelity
                 },
                 jsPDF: {
                     unit: 'in',
