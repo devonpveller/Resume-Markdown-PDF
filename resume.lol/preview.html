@@ -180,10 +180,10 @@
         async function exportPDF() {
             // Wait for fonts to load before generating PDF
             await document.fonts.ready;
-            
-            // Force a small delay to ensure fonts are fully rendered
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
+
+            // Force a longer delay to ensure fonts are fully rendered
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const element = document.getElementById('resume-container');
 
             const opt = {
@@ -196,7 +196,16 @@
                     allowTaint: true,
                     letterRendering: true,
                     logging: false,
-                    foreignObjectRendering: false
+                    foreignObjectRendering: false,
+                    onclone: (clonedDoc) => {
+                        // Force font reload in cloned document
+                        const style = clonedDoc.createElement('style');
+                        style.textContent = `
+                            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=block');
+                            * { font-family: Inter, system-ui, -apple-system, sans-serif !important; }
+                        `;
+                        clonedDoc.head.appendChild(style);
+                    }
                 },
                 jsPDF: {
                     unit: 'in',
