@@ -177,18 +177,26 @@
         }
 
         // Export PDF function
-        function exportPDF() {
+        async function exportPDF() {
+            // Wait for fonts to load before generating PDF
+            await document.fonts.ready;
+            
+            // Force a small delay to ensure fonts are fully rendered
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             const element = document.getElementById('resume-container');
 
             const opt = {
                 margin: 0,
                 filename: 'Resume-Devon-Veller.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
+                image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: {
-                    scale: 1.5,
+                    scale: 2,
                     useCORS: true,
+                    allowTaint: true,
                     letterRendering: true,
-                    logging: false
+                    logging: false,
+                    foreignObjectRendering: false
                 },
                 jsPDF: {
                     unit: 'in',
