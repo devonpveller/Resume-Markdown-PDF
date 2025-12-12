@@ -27,6 +27,11 @@ hr.pagebreak {
     border: none;
 }
 
+/* Add top padding to content after page breaks */
+div[style*="page-break-before"] {
+    padding-top: 40px;
+}
+
 /* ordering of content */
 h1 {
     order: 0;
