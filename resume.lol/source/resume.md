@@ -31,7 +31,7 @@ Formatted for resume.lol
 
 *IST &mdash; UCF &mdash; METIL (Mixed Emerging Technology Integration Lab)*
 <div class="newline"></div>
-Seasoned game developer with 14 years of experience uniting art, engineering, and systems design to deliver breakthrough interactive solutions. Having executed 300+ products for Y12, Amazon, and Boeing, Devon excels at front-end gameplay systems, back-end architecture, and real-time performance optimization in serious games. Devon thrives at the intersection of R&D and cross-disciplinary collaboration, leveraging emerging technologies to push boundaries in interactive training and entertainment. Ready to drive innovation and shape engaging user experiences as a versatile technical and creative lead.
+Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12, Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
 
 ## Experience
 ### DOE &mdash; Senseglove Glovebox Scenario (Year 2) <span class="spacer"></span> 2025
