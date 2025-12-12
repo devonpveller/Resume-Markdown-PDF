@@ -23,6 +23,25 @@
             min-height: 11in;
         }
 
+        /* PDF export styles - remove padding when exporting */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+
+            #resume-container {
+                box-shadow: none;
+                padding: 0.5in;
+                margin: 0;
+            }
+
+            #export-button {
+                display: none;
+            }
+        }
+
         #loading {
             text-align: center;
             padding: 40px;
@@ -34,16 +53,43 @@
             padding: 20px;
             display: none;
         }
+
+        #export-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        #export-button:hover {
+            background: #0052a3;
+        }
+
+        #export-button:active {
+            background: #003d7a;
+        }
     </style>
 </head>
 
 <body>
+    <button id="export-button">Export PDF</button>
     <div id="loading">Loading resume...</div>
     <div id="error"></div>
     <div id="resume-container"></div>
 
     <!-- Markdown parser from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- PDF export library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
         let lastModified = null;
@@ -130,11 +176,42 @@
             }
         }
 
-        // Load resume when page loads
-        window.addEventListener('DOMContentLoaded', () => {
-            loadResume();
+        // Export PDF function
+        function exportPDF() {
+            const element = document.getElementById('resume-container');
+
+            const opt = {
+                margin: 0,
+                filename: 'Resume-Devon-Veller.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 1.5,
+                    useCORS: true,
+                    letterRendering: true,
+                    logging: false
+                },
+                jsPDF: {
+                    unit: 'in',
+                    format: 'letter',
+                    orientation: 'portrait',
+                    compress: true
+                },
+                pagebreak: {
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    before: '.pagebreak'
+                }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // Load resume on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadResume();
             // Check for updates every 2 seconds
             setInterval(checkForUpdates, 2000);
+            // Attach export button handler
+            document.getElementById('export-button').addEventListener('click', exportPDF);
         });
     </script>
 </body>
