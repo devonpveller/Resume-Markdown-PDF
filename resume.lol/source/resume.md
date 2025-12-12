@@ -52,7 +52,7 @@ Technologies: Unity, OpenXR, C#, NGO (Netcode for GameObjects), Unity Services, 
 
 ### DOE &mdash; SMART Interactive Scenario <span class="spacer"></span> 2023
 
-*Game Designer & Lead Developer*
+*Delivered | Game Designer & Lead Developer*
 <div class="newline"></div>
 Conceptualized product and lead a team of developers and artists to create a customer-facing web portal, enabling remote scenario editing and authoring of real-time Unreal content.
 
@@ -61,7 +61,7 @@ Technologies: Unreal Engine, C++, Web Portal Integration
 
 ### DOE &mdash; HaptX Glovebox Scenario <span class="spacer"></span> 2022 &mdash; 2023
 
-*Technical Artist, Developer, & Art Direction*
+*Delivered | Technical Artist, Developer, & Art Direction*
 <div class="newline"></div>
 Responsible for the implementation and direction of art assets, along with the development of a Glovebox digital twin system, supporting multiplayer and HaptX gloves.
 
@@ -70,7 +70,7 @@ Technologies: Unreal Engine, C++, HaptX SDK, Multiplayer Networking
 
 ### DOE &mdash; Digital Twin Interactive Map <span class="spacer"></span> 2022 &mdash; 2023
 
-*Lead Game Developer & Technical Artist*
+*Delivered | Lead Game Developer & Technical Artist*
 <div class="newline"></div>
 Responsible for the accuracy of art assets and their implementation, along with the design and development of interactions and features within the front-end and back-end utilizing Unreal Engine.
 
@@ -82,7 +82,7 @@ Technologies: Unreal Engine, C++, Data Pipeline, Pathfinding Algorithms, Bluepri
 
 ### VA &mdash; VAPPE <span class="spacer"></span> 2021 &mdash; 2023
 
-*Lead Front-End Developer & Art Director*
+*Delivered | Lead Front-End Developer & Art Director*
 <div class="newline"></div>
 Designed and implemented art, front end gameplay interactions and engineered backend scenario authoring ingestion for a real-time scenario-based application, currently available on the Apple Store.
 
@@ -112,6 +112,6 @@ Technologies: Unity, C#, iOS, WebGL, CSV Parsing, 508 Compliance
 
 ## Achievements
 
-- Delivered 300+ products for Y12, Amazon, and Boeing
+- Delivered 300+ products for Y12, Amazon, Boeing and more
 - Published applications on Apple Store, most recently VAPPE
 - 14 years of professional game development experience
