@@ -1,0 +1,51 @@
+/* Import resume styles */
+@import url('../public/resume.css');
+@import url('../public/settings.css');
+
+.app-container {
+    max-width: 8.5in;
+    margin: 0 auto;
+    background: #f0f0f0;
+    padding: 20px;
+}
+
+.resume-container {
+    background: white;
+    padding: 0.5in;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    min-height: 11in;
+    width: 8.5in;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+.loading,
+.error {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    color: red;
+}
+
+/* PDF export styles - remove padding when exporting */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+
+    .app-container {
+        padding: 0;
+        background: white;
+    }
+
+    .resume-container {
+        box-shadow: none;
+        padding: 0.5in;
+        margin: 0;
+    }
+}
