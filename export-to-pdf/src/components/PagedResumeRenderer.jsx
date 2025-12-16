@@ -28,90 +28,112 @@ function PagedResumeRenderer({ markdown }) {
     const detectPageBreaks = () => {
         if (!printRef.current || !hiddenPrintRef.current) return
 
-        // Use the hidden print-container for measurements (what Puppeteer sees)
-        const printContainer = hiddenPrintRef.current.firstElementChild
+        // Measure from hidden print-container
+        const printContainer = hiddenPrintRef.current
         const displayContainer = printRef.current
         const firstChild = displayContainer.firstElementChild
-        
-        if (!printContainer || !firstChild) return
-        
+
+        if (!printContainer || !firstChild) {
+            console.error('Missing containers:', { printContainer: !!printContainer, firstChild: !!firstChild })
+            return
+        }
+
         // Measure from print container (accurate for PDF)
         const printHeight = printContainer.scrollHeight
+        const displayHeight = firstChild.scrollHeight
         const pageHeight = 10 * 96 // 10 inches of content per page
-        
+
         console.log('Print container height:', printHeight)
-        console.log('Display container first child height:', firstChild.scrollHeight)
-        
+        console.log('Display container first child height:', displayHeight)
+        console.log('Height ratio:', (displayHeight / printHeight).toFixed(4))
+        console.log('Ratio difference from 1.0:', Math.abs((displayHeight / printHeight) - 1.0).toFixed(4))
+
         // Find manual page breaks in display container
         const pageBreakElements = Array.from(displayContainer.querySelectorAll('[style*="page-break"]'))
         console.log('Found manual page break elements:', pageBreakElements.length)
-        
+        console.log('Page break element details:', pageBreakElements.map(el => ({
+            tag: el.tagName,
+            style: el.getAttribute('style'),
+            offsetTop: el.offsetTop
+        })))
+
         const allBreaks = []
-        
+
         // Get manual page break positions from display
         const manualBreaks = pageBreakElements.map((elem, index) => {
             const offsetTop = elem.offsetTop
             console.log(`Manual page break ${index + 1} at:`, offsetTop, 'px')
             return offsetTop
         }).sort((a, b) => a - b)
-        
+
         // Create segments
         const segments = []
-        
+
         if (manualBreaks.length > 0) {
             segments.push({ start: 0, end: manualBreaks[0] })
-            
+
             for (let i = 0; i < manualBreaks.length - 1; i++) {
                 segments.push({ start: manualBreaks[i], end: manualBreaks[i + 1] })
             }
-            
+
             segments.push({ start: manualBreaks[manualBreaks.length - 1], end: firstChild.scrollHeight })
         } else {
             segments.push({ start: 0, end: firstChild.scrollHeight })
         }
-        
+
         console.log('Content segments:', segments)
-        
+        console.log('Number of segments:', segments.length)
+
+        // Calculate height ratio for diagnostics
+        const heightRatio = displayHeight / printHeight
+
         // Add natural breaks within each segment
         segments.forEach((segment, segIndex) => {
             const segmentHeight = segment.end - segment.start
             const numPagesInSegment = Math.ceil(segmentHeight / pageHeight)
-            
+
             console.log(`Segment ${segIndex}: height=${segmentHeight}px, pages=${numPagesInSegment}`)
-            
+
             for (let i = 1; i < numPagesInSegment; i++) {
                 // Calculate natural break position
-                // Use print container measurements to determine adjustment
                 const basePosition = segment.start + (i * pageHeight)
-                
-                // Dynamic adjustment: compare rendering vs expected
-                // First page typically needs slight downward adjustment due to initial spacing
-                // Subsequent pages in later segments may need slight upward adjustment
-                const heightRatio = firstChild.scrollHeight / printHeight
-                const isFirstSegment = segIndex === 0
-                
-                // Adaptive adjustment based on rendering difference
+
+                // Dynamic adjustment based on WHICH NATURAL BREAK this is overall
+                // Not based on segment, but on the absolute page number
+                const overallBreakNumber = allBreaks.length + 1
+
+                // Progressive adjustment: first break needs to go down, subsequent breaks need to go up more
                 let adjustment = 0
-                if (Math.abs(heightRatio - 1.0) > 0.01) {
-                    // If there's significant height difference, apply proportional adjustment
-                    adjustment = isFirstSegment ? 20 : -10
+                if (overallBreakNumber === 1) {
+                    // First natural page break (1-2)
+                    adjustment = 20
+                } else if (overallBreakNumber === 2) {
+                    // Second natural break (2-3) - needs smaller upward correction
+                    adjustment = -20
                 } else {
-                    // Minimal adjustment for well-matched rendering
-                    adjustment = isFirstSegment ? 10 : -5
+                    // Later breaks (3-4+) - need larger upward correction
+                    adjustment = -40
                 }
-                
+
                 const naturalBreak = basePosition + adjustment
                 allBreaks.push(naturalBreak)
-                console.log(`  Natural break ${i} in segment ${segIndex} at:`, naturalBreak, `px (adj: ${adjustment}px, ratio: ${heightRatio.toFixed(3)})`)
+                console.log(`  Natural break ${i} in segment ${segIndex} (overall break #${overallBreakNumber}):`, {
+                    basePosition,
+                    adjustment,
+                    finalPosition: naturalBreak,
+                    heightRatio: heightRatio.toFixed(3),
+                    isFirstSegment: segIndex === 0,
+                    overallBreakNumber
+                })
             }
         })
-        
+
         // Add manual breaks
         allBreaks.push(...manualBreaks)
-        
+
         // Sort and deduplicate
         const sortedBreaks = Array.from(new Set(allBreaks)).sort((a, b) => a - b)
-        
+
         console.log('Final combined page breaks:', sortedBreaks)
         setPageBreakPositions(sortedBreaks)
     }
@@ -122,7 +144,7 @@ function PagedResumeRenderer({ markdown }) {
             <div className="print-container" ref={hiddenPrintRef}>
                 <ResumeRenderer markdown={markdown} />
             </div>
-            
+
             {/* Screen preview - continuous content with page boundaries */}
             <div className="pages-container">
                 <div
