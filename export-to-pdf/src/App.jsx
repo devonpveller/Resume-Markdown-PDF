@@ -10,6 +10,8 @@ function App() {
     const [exportMessage, setExportMessage] = useState('')
     const [lastModified, setLastModified] = useState(null)
     const [exportPath, setExportPath] = useState('Loading...')
+    const [showDirInput, setShowDirInput] = useState(false)
+    const [customDir, setCustomDir] = useState('')
 
     async function loadResume() {
         try {
@@ -87,6 +89,30 @@ function App() {
         window.print()
     }
 
+    const handleChangeDir = async () => {
+        if (!customDir.trim()) {
+            alert('Please enter a valid directory path')
+            return
+        }
+
+        try {
+            const response = await fetch('/api/set-export-dir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directory: customDir })
+            })
+
+            if (!response.ok) throw new Error('Failed to set directory')
+
+            const result = await response.json()
+            setExportPath(result.path)
+            setShowDirInput(false)
+            setCustomDir('')
+        } catch (err) {
+            alert('Error setting directory: ' + err.message)
+        }
+    }
+
     if (loading) {
         return <div className="loading">Loading resume...</div>
     }
@@ -103,7 +129,26 @@ function App() {
                     <button onClick={handleExport} disabled={exporting} className="export-btn">
                         {exporting ? 'Exporting...' : 'Export PDF'}
                     </button>
-                    <span className="export-info">Saves to: {exportPath}</span>
+                    <div className="export-path-container">
+                        <span className="export-info">Saves to: {exportPath}</span>
+                        <button onClick={() => setShowDirInput(!showDirInput)} className="change-dir-btn">
+                            {showDirInput ? 'Cancel' : 'Change Directory'}
+                        </button>
+                    </div>
+                    {showDirInput && (
+                        <div className="dir-input-container">
+                            <input
+                                type="text"
+                                value={customDir}
+                                onChange={(e) => setCustomDir(e.target.value)}
+                                placeholder="Enter full directory path (e.g., C:\Users\Devon\Documents)"
+                                className="dir-input"
+                            />
+                            <button onClick={handleChangeDir} className="set-dir-btn">
+                                Set Directory
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <button onClick={handlePrint} className="print-btn">
                     Browser Print

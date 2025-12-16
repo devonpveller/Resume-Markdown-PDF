@@ -4,8 +4,12 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import fs from 'fs'
 
 const execAsync = promisify(exec)
+
+// Store custom export directory
+let customExportDir = null
 
 // Plugin to handle PDF export API
 const exportApiPlugin = () => ({
@@ -15,7 +19,8 @@ const exportApiPlugin = () => ({
             // Export path info endpoint
             if (req.url === '/api/export-path' && req.method === 'GET') {
                 const today = new Date().toISOString().split('T')[0]
-                const exportDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
+                const defaultDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
+                const exportDir = customExportDir || defaultDir
                 const fullPath = path.join(exportDir, `Resume-Devon-Veller-${today}.pdf`)
 
                 res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -25,14 +30,61 @@ const exportApiPlugin = () => ({
                 return
             }
 
+            // Set export directory endpoint
+            if (req.url === '/api/set-export-dir' && req.method === 'POST') {
+                let body = ''
+                req.on('data', chunk => { body += chunk.toString() })
+                req.on('end', () => {
+                    try {
+                        const { directory } = JSON.parse(body)
+                        
+                        // Validate directory exists
+                        if (!fs.existsSync(directory)) {
+                            res.writeHead(400, { 'Content-Type': 'application/json' })
+                            res.end(JSON.stringify({
+                                success: false,
+                                error: 'Directory does not exist'
+                            }))
+                            return
+                        }
+
+                        customExportDir = directory
+                        const today = new Date().toISOString().split('T')[0]
+                        const fullPath = path.join(directory, `Resume-Devon-Veller-${today}.pdf`)
+
+                        console.log('Export directory updated to:', directory)
+
+                        res.writeHead(200, { 'Content-Type': 'application/json' })
+                        res.end(JSON.stringify({
+                            success: true,
+                            path: fullPath
+                        }))
+                    } catch (error) {
+                        res.writeHead(400, { 'Content-Type': 'application/json' })
+                        res.end(JSON.stringify({
+                            success: false,
+                            error: error.message
+                        }))
+                    }
+                })
+                return
+            }
+
             // Export PDF endpoint
             if (req.url === '/api/export-pdf' && req.method === 'POST') {
                 try {
                     console.log('Export PDF requested...')
 
+                    // Set environment variable for custom export directory
+                    const env = { ...process.env }
+                    if (customExportDir) {
+                        env.EXPORT_DIR = customExportDir
+                    }
+
                     // Run the export script
                     const { stdout, stderr } = await execAsync('npm run export', {
-                        cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)))
+                        cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
+                        env
                     })
 
                     if (stderr && !stderr.includes('ExperimentalWarning')) {

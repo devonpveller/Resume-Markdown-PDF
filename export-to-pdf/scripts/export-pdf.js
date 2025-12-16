@@ -44,7 +44,12 @@ async function exportPDF() {
 
         // Generate timestamp for filename
         const timestamp = new Date().toISOString().split('T')[0]
-        const outputPath = path.join(__dirname, '..', `Resume-Devon-Veller-${timestamp}.pdf`)
+        
+        // Use custom directory if set, otherwise use default
+        const exportDir = process.env.EXPORT_DIR || path.join(__dirname, '..')
+        const outputPath = path.join(exportDir, `Resume-Devon-Veller-${timestamp}.pdf`)
+
+        console.log('Export path:', outputPath)
 
         // Generate PDF with exact settings
         await page.pdf({
