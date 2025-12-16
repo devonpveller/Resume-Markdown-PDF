@@ -52,12 +52,13 @@ async function exportPDF() {
             format: 'Letter',
             printBackground: true,
             margin: {
-                top: '0.5in',
-                right: '0.5in',
-                bottom: '0.5in',
-                left: '0.5in'
+                top: '0in',
+                right: '0in',
+                bottom: '0in',
+                left: '0in'
             },
-            preferCSSPageSize: false
+            preferCSSPageSize: false,
+            displayHeaderFooter: false
         })
 
         console.log(`✅ PDF exported successfully: ${outputPath}`)

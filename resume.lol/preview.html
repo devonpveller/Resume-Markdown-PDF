@@ -179,41 +179,45 @@
             }
         }
 
-        // Export PDF function
+        // Export PDF function - calls the React export server
         async function exportPDF() {
-            // Wait for fonts to load before generating PDF
-            await document.fonts.ready;
+            const button = document.getElementById('export-button');
+            const originalText = button.textContent;
 
-            // Force a longer delay to ensure fonts are fully rendered
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            try {
+                button.textContent = 'Exporting...';
+                button.disabled = true;
 
-            const element = document.getElementById('resume-container');
+                // Call the export server
+                const response = await fetch('http://localhost:3000/api/export-pdf', {
+                    method: 'POST'
+                });
 
-            const opt = {
-                margin: [0, -1, 0, -1],  // Increased left margin to shift content right
-                filename: 'Resume-Devon-Veller.pdf',
-                image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: {
-                    scale: 2,  // Balanced scale for proper sizing
-                    useCORS: true,
-                    allowTaint: true,
-                    letterRendering: true,
-                    logging: false,
-                    foreignObjectRendering: true  // Use SVG rendering for better font fidelity
-                },
-                jsPDF: {
-                    unit: 'in',
-                    format: 'letter',
-                    orientation: 'portrait',
-                    compress: true
-                },
-                pagebreak: {
-                    mode: ['avoid-all', 'css', 'legacy'],
-                    before: '.pagebreak'
+                if (!response.ok) {
+                    throw new Error('Export failed');
                 }
-            };
 
-            html2pdf().set(opt).from(element).save();
+                const result = await response.json();
+
+                button.textContent = '✓ Exported!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 2000);
+
+                // Optionally open the export folder
+                if (result.path) {
+                    console.log('PDF exported to:', result.path);
+                }
+
+            } catch (error) {
+                console.error('Export error:', error);
+                button.textContent = '✗ Export failed';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 2000);
+            }
         }
 
         // Load resume on page load

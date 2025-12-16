@@ -9,6 +9,65 @@
     padding: 20px;
 }
 
+.controls {
+    background: white;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.export-btn,
+.print-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.export-btn {
+    background: #0066cc;
+    color: white;
+}
+
+.export-btn:hover:not(:disabled) {
+    background: #0052a3;
+}
+
+.export-btn:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+.print-btn {
+    background: #28a745;
+    color: white;
+}
+
+.print-btn:hover {
+    background: #218838;
+}
+
+.export-message {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.print-instructions {
+    margin-left: auto;
+    font-size: 12px;
+    color: #666;
+}
+
 .resume-container {
     background: white;
     padding: 0.5in;
@@ -32,6 +91,16 @@
 
 /* PDF export styles - remove padding when exporting */
 @media print {
+    @page {
+        margin: 0.5in;
+        size: letter;
+    }
+
+    .no-print,
+    .controls {
+        display: none !important;
+    }
+
     body {
         margin: 0;
         padding: 0;
@@ -45,7 +114,7 @@
 
     .resume-container {
         box-shadow: none;
-        padding: 0.5in;
+        padding: 0;
         margin: 0;
     }
 }

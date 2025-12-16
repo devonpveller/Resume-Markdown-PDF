@@ -102,8 +102,7 @@ ul {
     padding-right: 24px;
 }
 
-/* header info content */
-.headerInfo>ul {
+o>ul {
     display: flex;
     text-align: center;
     justify-content: center;
