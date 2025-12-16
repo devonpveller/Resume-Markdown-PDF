@@ -63,20 +63,21 @@ function PagedResumeRenderer({ markdown }) {
         const manualBreaks = pageBreakElements.map((elem, index) => {
             const offsetTop = elem.offsetTop
             console.log(`Manual page break ${index + 1} at:`, offsetTop, 'px')
-            return offsetTop
-        }).sort((a, b) => a - b)
+            return { position: offsetTop, isManual: true }
+        }).sort((a, b) => a.position - b.position)
 
-        // Create segments
+        // Calculate natural breaks between manual breaks (and before first, after last)
         const segments = []
 
+        // Segment before first manual break (if any)
         if (manualBreaks.length > 0) {
-            segments.push({ start: 0, end: manualBreaks[0] })
+            segments.push({ start: 0, end: manualBreaks[0].position })
 
             for (let i = 0; i < manualBreaks.length - 1; i++) {
-                segments.push({ start: manualBreaks[i], end: manualBreaks[i + 1] })
+                segments.push({ start: manualBreaks[i].position, end: manualBreaks[i + 1].position })
             }
 
-            segments.push({ start: manualBreaks[manualBreaks.length - 1], end: firstChild.scrollHeight })
+            segments.push({ start: manualBreaks[manualBreaks.length - 1].position, end: firstChild.scrollHeight })
         } else {
             segments.push({ start: 0, end: firstChild.scrollHeight })
         }
@@ -116,7 +117,7 @@ function PagedResumeRenderer({ markdown }) {
                 }
 
                 const naturalBreak = basePosition + adjustment
-                allBreaks.push(naturalBreak)
+                allBreaks.push({ position: naturalBreak, isManual: false })
                 console.log(`  Natural break ${i} in segment ${segIndex} (overall break #${overallBreakNumber}):`, {
                     basePosition,
                     adjustment,
@@ -131,9 +132,12 @@ function PagedResumeRenderer({ markdown }) {
         // Add manual breaks
         allBreaks.push(...manualBreaks)
 
-        // Sort and deduplicate
-        const sortedBreaks = Array.from(new Set(allBreaks)).sort((a, b) => a - b)
-
+        // Sort and deduplicate by position
+        const sortedBreaks = allBreaks
+            .sort((a, b) => a.position - b.position)
+            .filter((breakItem, index, arr) =>
+                index === 0 || breakItem.position !== arr[index - 1].position
+            )
         console.log('Final combined page breaks:', sortedBreaks)
         setPageBreakPositions(sortedBreaks)
     }
@@ -160,7 +164,7 @@ function PagedResumeRenderer({ markdown }) {
                     <ResumeRenderer markdown={markdown} />
 
                     {/* Visual page break indicators */}
-                    {pageBreakPositions.map((position, i) => (
+                    {pageBreakPositions.map((breakItem, i) => (
                         <div
                             key={i}
                             className="page-break-indicator"
@@ -168,7 +172,7 @@ function PagedResumeRenderer({ markdown }) {
                                 position: 'absolute',
                                 left: '-0.5in',
                                 right: '-0.5in',
-                                top: `${position}px`,
+                                top: `${breakItem.position}px`,
                                 height: '2px',
                                 background: 'linear-gradient(90deg, #ff0000 0%, #ff0000 50%, transparent 50%)',
                                 backgroundSize: '20px 2px',
@@ -186,9 +190,11 @@ function PagedResumeRenderer({ markdown }) {
                                 padding: '2px 8px',
                                 borderRadius: '3px',
                                 fontSize: '10px',
-                                fontWeight: 'bold'
+                                fontWeight: 'bold',
+                                textAlign: 'center'
                             }}>
-                                Page {i + 1} / {i + 2}
+                                <div>Page {i + 1} / {i + 2}</div>
+                                {breakItem.isManual && <div style={{ fontSize: '8px', marginTop: '2px' }}>Manual</div>}
                             </div>
                         </div>
                     ))}
