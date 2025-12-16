@@ -12,6 +12,20 @@ const exportApiPlugin = () => ({
     name: 'export-api',
     configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
+            // Export path info endpoint
+            if (req.url === '/api/export-path' && req.method === 'GET') {
+                const today = new Date().toISOString().split('T')[0]
+                const exportDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
+                const fullPath = path.join(exportDir, `Resume-Devon-Veller-${today}.pdf`)
+
+                res.writeHead(200, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({
+                    path: fullPath
+                }))
+                return
+            }
+
+            // Export PDF endpoint
             if (req.url === '/api/export-pdf' && req.method === 'POST') {
                 try {
                     console.log('Export PDF requested...')

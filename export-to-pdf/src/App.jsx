@@ -9,6 +9,7 @@ function App() {
     const [exporting, setExporting] = useState(false)
     const [exportMessage, setExportMessage] = useState('')
     const [lastModified, setLastModified] = useState(null)
+    const [exportPath, setExportPath] = useState('Loading...')
 
     async function loadResume() {
         try {
@@ -35,6 +36,12 @@ function App() {
 
     useEffect(() => {
         loadResume()
+
+        // Fetch the export path from the server
+        fetch('/api/export-path')
+            .then(res => res.json())
+            .then(data => setExportPath(data.path))
+            .catch(() => setExportPath('export-to-pdf folder'))
 
         // Check for file changes every 2 seconds
         const interval = setInterval(async () => {
@@ -92,9 +99,12 @@ function App() {
         <div className="app-container">
             <div className="controls no-print">
                 <div className="title">Resume Live Preview & Export</div>
-                <button onClick={handleExport} disabled={exporting} className="export-btn">
-                    {exporting ? 'Exporting...' : 'Export PDF'}
-                </button>
+                <div className="button-group">
+                    <button onClick={handleExport} disabled={exporting} className="export-btn">
+                        {exporting ? 'Exporting...' : 'Export PDF'}
+                    </button>
+                    <span className="export-info">Saves to: {exportPath}</span>
+                </div>
                 <button onClick={handlePrint} className="print-btn">
                     Browser Print
                 </button>

@@ -28,6 +28,18 @@
     margin-right: 10px;
 }
 
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.export-info {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
+}
+
 .auto-refresh-indicator {
     margin-left: auto;
     font-size: 13px;
