@@ -12,6 +12,7 @@ function App() {
     const [exportPath, setExportPath] = useState('Loading...')
     const [showDirInput, setShowDirInput] = useState(false)
     const [customDir, setCustomDir] = useState('')
+    const [lastSyncTime, setLastSyncTime] = useState(new Date())
 
     async function loadResume() {
         try {
@@ -23,6 +24,7 @@ function App() {
             const modified = response.headers.get('Last-Modified')
             if (lastModified && modified && lastModified !== modified) {
                 console.log('Resume file changed, reloading...')
+                setLastSyncTime(new Date())
             }
             setLastModified(modified)
 
@@ -154,7 +156,9 @@ function App() {
                     Browser Print
                 </button>
                 {exportMessage && <span className="export-message">{exportMessage}</span>}
-                <div className="auto-refresh-indicator">🔄 Auto-refreshes when resume.md changes</div>
+                <div className="auto-refresh-indicator">
+                    🔄 Auto-refreshes when resume.md changes (Last updated: {lastSyncTime.toLocaleTimeString()})
+                </div>
             </div>
             <PagedResumeRenderer markdown={resumeMarkdown} />
         </div>
