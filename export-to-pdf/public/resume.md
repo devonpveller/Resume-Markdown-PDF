@@ -34,16 +34,16 @@ Formatted for resume.lol
 Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12, Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
 
 ## Experience
-### DOE &mdash; Quickstart <span class="spacer"></span> 2025 - Current
+### DOE &mdash; Quickstart <span class="spacer"></span> 2025 - Present
 
 *Lead Developer, Technical Artist*
 <div class="newline"></div>
 Training future DOE employees through the Quickstart program as a hands-on development experience focused on learning rapid development of XR technology implementation challenges for DOE training objectives.
 
-- Mentored 7+ developers in XR development best practices, project architecture, and technical problem-solving through weekly code reviews and pair programming sessions, fostering skill growth and project contribution.
-- Fostered collaborative team environment by facilitating knowledge sharing and open communication, resulting in improved team cohesion and project efficiency gradually over the program duration.
-- Through mentorship and guidance, 57% of montees secured full-time positions in XR development or related fields post-program completion.
-- Led development of 4 modular projects spanning across 4 novel platforms 16 total projects over a 6 month period from holographic displays to XR headsets.
+- Mentored 7+ developers in XR development best practices, project architecture, and technical problem-solving through weekly code reviews and pair programming, accelerating team proficiency and project delivery.
+<!-- - Fostered a collaborative team environment by facilitating knowledge sharing and open communication using industry-leading tools, improving team cohesion and project efficiency over the program duration. -->
+- Through mentorship and guidance, enabled 57% of mentees to secure full-time positions in XR development or related fields post-program completion.
+- Led the development of 4 modular projects across 4 novel platforms—ranging from holographic displays to XR headsets—delivering 16 total projects within a 6-month period.
 <div class="newline"></div>
 
 ### DOE &mdash; Senseglove Glovebox Scenario (Year 2) <span class="spacer"></span> 2025

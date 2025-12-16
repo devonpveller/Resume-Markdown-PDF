@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import ResumeRenderer from './components/ResumeRenderer'
+import PagedResumeRenderer from './components/PagedResumeRenderer'
 import './App.css'
 
 function App() {
@@ -141,7 +141,7 @@ function App() {
                                 type="text"
                                 value={customDir}
                                 onChange={(e) => setCustomDir(e.target.value)}
-                                placeholder="Enter full directory path (e.g., C:\Users\Devon\Documents)"
+                                placeholder="Enter full directory path (e.g., C:\\Users\\Devon\\Documents)"
                                 className="dir-input"
                             />
                             <button onClick={handleChangeDir} className="set-dir-btn">
@@ -156,9 +156,7 @@ function App() {
                 {exportMessage && <span className="export-message">{exportMessage}</span>}
                 <div className="auto-refresh-indicator">🔄 Auto-refreshes when resume.md changes</div>
             </div>
-            <div id="resume-container" className="resume-container">
-                <ResumeRenderer markdown={resumeMarkdown} />
-            </div>
+            <PagedResumeRenderer markdown={resumeMarkdown} />
         </div>
     )
 }

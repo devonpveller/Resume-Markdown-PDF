@@ -9,6 +9,43 @@
     padding: 20px;
 }
 
+.pages-wrapper {
+    position: relative;
+}
+
+.content-measure {
+    position: absolute;
+    visibility: hidden;
+    left: -9999px;
+    width: 8.5in;
+    padding: 0.5in;
+    box-sizing: border-box;
+}
+
+.print-container {
+    display: none;
+}
+
+.pages-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    position: relative;
+}
+
+.page-content-clip {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.page-content-window {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
 .controls {
     background: white;
     padding: 15px;
@@ -153,10 +190,81 @@
     background: white;
     padding: 0.5in;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    min-height: 11in;
     width: 8.5in;
     box-sizing: border-box;
-    margin: 0 auto;
+    margin: 0 auto 20px auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.resume-container.page {
+    min-height: auto;
+    height: auto;
+}
+
+.page-number-label {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #555;
+    color: white;
+    padding: 4px 16px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.resume-container.page::before {
+    display: none;
+}
+
+/* Page break visualization */
+.resume-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #ccc 10%, #ccc 90%, transparent);
+    pointer-events: none;
+}
+
+/* Handle explicit page breaks */
+:global([style*="page-break-before"]) {
+    page-break-before: always;
+    break-before: page;
+    margin-top: 0;
+    padding-top: 0.5in;
+    position: relative;
+}
+
+:global([style*="page-break-before"])::before {
+    content: 'Page Break';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff9800;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+/* Simulate page breaks for print preview */
+@media screen {
+    .resume-container {
+        page-break-after: auto;
+        break-after: auto;
+    }
 }
 
 .loading,
@@ -182,6 +290,21 @@
         display: none !important;
     }
 
+    /* Hide paginated preview during print/export */
+    .pages-container,
+    .content-measure,
+    .page-number-label {
+        display: none !important;
+    }
+
+    /* Show continuous print container */
+    .print-container {
+        display: block !important;
+        width: 7.5in;
+        margin: 0;
+        padding: 0;
+    }
+
     body {
         margin: 0;
         padding: 0;
@@ -191,11 +314,31 @@
     .app-container {
         padding: 0;
         background: white;
+        max-width: none;
     }
 
+    .pages-wrapper {
+        position: static;
+    }
+
+    /* Remove all height/overflow constraints from resume elements */
     .resume-container {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
         box-shadow: none;
         padding: 0;
         margin: 0;
+        page-break-inside: auto;
+    }
+
+    .resume-container::before,
+    .resume-container::after {
+        display: none !important;
+    }
+
+    :global([style*="page-break-before"])::before {
+        display: none !important;
     }
 }
