@@ -37,7 +37,7 @@ const exportApiPlugin = () => ({
                 req.on('end', () => {
                     try {
                         const { directory } = JSON.parse(body)
-                        
+
                         // Validate directory exists
                         if (!fs.existsSync(directory)) {
                             res.writeHead(400, { 'Content-Type': 'application/json' })

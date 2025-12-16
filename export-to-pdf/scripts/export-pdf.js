@@ -44,7 +44,7 @@ async function exportPDF() {
 
         // Generate timestamp for filename
         const timestamp = new Date().toISOString().split('T')[0]
-        
+
         // Use custom directory if set, otherwise use default
         const exportDir = process.env.EXPORT_DIR || path.join(__dirname, '..')
         const outputPath = path.join(exportDir, `Resume-Devon-Veller-${timestamp}.pdf`)

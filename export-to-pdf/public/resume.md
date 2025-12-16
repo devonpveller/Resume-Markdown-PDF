@@ -34,12 +34,18 @@ Formatted for resume.lol
 Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12, Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
 
 ## Experience
-### DOE &mdash; Quickstart <span class="spacer"></span> 2025
+### DOE &mdash; Quickstart <span class="spacer"></span> 2025 - Current
 
 *Lead Developer, Technical Artist*
 <div class="newline"></div>
+Training future DOE employees through the Quickstart program as a hands-on development experience focused on learning rapid development of XR technology implementation challenges for DOE training objectives.
 
-Leading a group of interns to develop modular XR training experiences for DOE applications and technology implementation challenges using novel approaches to rapid prototyping and iterative design.
+- Mentored 7+ developers in XR development best practices, project architecture, and technical problem-solving through weekly code reviews and pair programming sessions, fostering skill growth and project contribution.
+- Fostered collaborative team environment by facilitating knowledge sharing and open communication, resulting in improved team cohesion and project efficiency gradually over the program duration.
+- Through mentorship and guidance, 57% of montees secured full-time positions in XR development or related fields post-program completion.
+- Led development of 4 modular projects spanning across 4 novel platforms 16 total projects over a 6 month period from holographic displays to XR headsets.
+<div class="newline"></div>
+
 ### DOE &mdash; Senseglove Glovebox Scenario (Year 2) <span class="spacer"></span> 2025
 
 *Delivered | Lead Developer, Technical Artist, & Art Direction*
