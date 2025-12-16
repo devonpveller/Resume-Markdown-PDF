@@ -9,6 +9,9 @@ echo.
 
 cd /d "%~dp0"
 
+echo Syncing latest resume.md to React app...
+copy resume.lol\source\resume.md export-to-pdf\public\resume.md >nul
+
 if not exist export-to-pdf\node_modules (
     echo Installing dependencies...
     cd export-to-pdf
@@ -36,35 +39,34 @@ if not exist export-to-pdf\dist (
     echo.
 )
 
-echo Starting preview server on http://localhost:8000...
-cd resume.lol
-start "Resume Preview Server" cmd /k "python -m http.server 8000 2>nul || echo Server stopped"
-cd ..
-timeout /t 2 /nobreak >nul
-
-echo Starting React export server on http://localhost:3000...
+echo Starting React dev server on http://localhost:3000...
 cd export-to-pdf
-start "React Export Server" cmd /k "npm run dev 2>nul || echo Server stopped"
+start "Resume System" cmd /k "npm run dev 2>nul || echo Server stopped"
 cd ..
 echo.
 
-echo Waiting for servers to initialize...
+echo Starting file watcher for auto-sync...
+start "Resume File Watcher" /MIN cmd /k "watch-resume.bat"
+echo.
+
+echo Waiting for server to initialize...
 timeout /t 5 /nobreak >nul
 
-echo Opening preview in browser...
-start http://localhost:8000/preview.html
-timeout /t 1 /nobreak >nul
+echo Opening resume system in browser...
 start http://localhost:3000
 
 echo.
 echo ========================================
-echo ALL SYSTEMS RUNNING
+echo RESUME SYSTEM RUNNING
 echo ========================================
 echo.
-echo Preview Server:  http://localhost:8000/preview.html
-echo Export App:      http://localhost:3000
+echo Resume Preview ^& Export:  http://localhost:3000
 echo.
-echo Press Ctrl+C to stop servers when done.
+echo - Live preview with auto-refresh
+echo - Export PDF button for automated export
+echo - Browser Print option available
+echo.
+echo Press Ctrl+C to stop server when done.
 echo.
 
 :wait_loop

@@ -34,6 +34,12 @@ Formatted for resume.lol
 Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12, Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
 
 ## Experience
+### DOE &mdash; Quickstart <span class="spacer"></span> 2025
+
+*Lead Developer, Technical Artist*
+<div class="newline"></div>
+
+Leading a group of interns to develop modular XR training experiences for DOE applications and technology implementation challenges using novel approaches to rapid prototyping and iterative design.
 ### DOE &mdash; Senseglove Glovebox Scenario (Year 2) <span class="spacer"></span> 2025
 
 *Delivered | Lead Developer, Technical Artist, & Art Direction*

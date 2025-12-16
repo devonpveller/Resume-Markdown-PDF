@@ -8,26 +8,51 @@ function App() {
     const [error, setError] = useState(null)
     const [exporting, setExporting] = useState(false)
     const [exportMessage, setExportMessage] = useState('')
+    const [lastModified, setLastModified] = useState(null)
+
+    async function loadResume() {
+        try {
+            // Fetch from public directory
+            const response = await fetch('/resume.md')
+            if (!response.ok) throw new Error('Failed to load resume.md')
+
+            // Store last modified time for auto-refresh
+            const modified = response.headers.get('Last-Modified')
+            if (lastModified && modified && lastModified !== modified) {
+                console.log('Resume file changed, reloading...')
+            }
+            setLastModified(modified)
+
+            const markdown = await response.text()
+            setResumeMarkdown(markdown)
+            setLoading(false)
+        } catch (err) {
+            console.error('Error loading resume:', err)
+            setError(err.message)
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
-        async function loadResume() {
-            try {
-                // Fetch from public directory
-                const response = await fetch('/resume.md')
-                if (!response.ok) throw new Error('Failed to load resume.md')
-
-                const markdown = await response.text()
-                setResumeMarkdown(markdown)
-                setLoading(false)
-            } catch (err) {
-                console.error('Error loading resume:', err)
-                setError(err.message)
-                setLoading(false)
-            }
-        }
-
         loadResume()
-    }, [])
+
+        // Check for file changes every 2 seconds
+        const interval = setInterval(async () => {
+            try {
+                const response = await fetch('/resume.md', { method: 'HEAD' })
+                const currentModified = response.headers.get('Last-Modified')
+
+                if (lastModified && currentModified && lastModified !== currentModified) {
+                    console.log('File changed, reloading...')
+                    await loadResume()
+                }
+            } catch (err) {
+                console.error('Error checking for updates:', err)
+            }
+        }, 2000)
+
+        return () => clearInterval(interval)
+    }, [lastModified])
 
     const handleExport = async () => {
         setExporting(true)
@@ -66,16 +91,15 @@ function App() {
     return (
         <div className="app-container">
             <div className="controls no-print">
+                <div className="title">Resume Live Preview & Export</div>
                 <button onClick={handleExport} disabled={exporting} className="export-btn">
-                    {exporting ? 'Exporting...' : 'Export PDF (Puppeteer)'}
+                    {exporting ? 'Exporting...' : 'Export PDF'}
                 </button>
                 <button onClick={handlePrint} className="print-btn">
-                    Print (Browser)
+                    Browser Print
                 </button>
                 {exportMessage && <span className="export-message">{exportMessage}</span>}
-                <div className="print-instructions">
-                    <strong>Browser Print:</strong> Make sure to set margins to "None" or "Minimum" and disable headers/footers
-                </div>
+                <div className="auto-refresh-indicator">🔄 Auto-refreshes when resume.md changes</div>
             </div>
             <div id="resume-container" className="resume-container">
                 <ResumeRenderer markdown={resumeMarkdown} />

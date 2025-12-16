@@ -17,8 +17,22 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-right: 10px;
+}
+
+.auto-refresh-indicator {
+    margin-left: auto;
+    font-size: 13px;
+    color: #28a745;
+    font-weight: 500;
 }
 
 .export-btn,
@@ -60,12 +74,8 @@
     border-radius: 4px;
     font-size: 14px;
     font-weight: 500;
-}
-
-.print-instructions {
-    margin-left: auto;
-    font-size: 12px;
-    color: #666;
+    background: #e8f5e9;
+    color: #2e7d32;
 }
 
 .resume-container {
