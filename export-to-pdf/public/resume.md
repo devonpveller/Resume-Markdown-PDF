@@ -22,7 +22,6 @@ Formatted for resume.lol
 <ul>
 <li><a href="https://devonveller.artstation.com/">https://devonveller.artstation.com/</a></li>
 <li><a href="https://github.com/devonpveller">https://github.com/devonpveller</a></li>
-<!-- <li>{LOCATION}</li> -->
 </ul>
 
 </div>
@@ -35,15 +34,15 @@ Multidisciplinary game developer with 14 years bridging art, engineering, and sy
 
 ## Experience
 ### DOE &mdash; Quickstart <span class="spacer"></span> 2025 - Present
-
 *Lead Developer, Technical Artist*
 <div class="newline"></div>
 Training future DOE employees through the Quickstart program as a hands-on development experience focused on learning rapid development of XR technology implementation challenges for DOE training objectives.
 
 - Mentored 7+ developers in XR development best practices, project architecture, and technical problem-solving through weekly code reviews and pair programming, accelerating team proficiency and project delivery.
-<!-- - Fostered a collaborative team environment by facilitating knowledge sharing and open communication using industry-leading tools, improving team cohesion and project efficiency over the program duration. -->
+- Fostered a collaborative team environment by facilitating knowledge sharing and open communication using industry-leading tools, improving team cohesion and project efficiency over the program duration.
 - Through mentorship and guidance, enabled 57% of mentees to secure full-time positions in XR development or related fields post-program completion.
-- Led the development of 4 modular projects across 4 novel platforms—ranging from holographic displays to XR headsets—delivering 16 total projects within a 6-month period.
+- Led the development of 4 modular projects across 4 platforms—ranging from holographic displays to XR headsets—delivering 16 total projects within a 6-month period.
+
 <div class="newline"></div>
 
 ### DOE &mdash; Senseglove Glovebox Scenario (Year 2) <span class="spacer"></span> 2025
