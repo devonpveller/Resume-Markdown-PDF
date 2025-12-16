@@ -3,6 +3,7 @@ import ResumeRenderer from './ResumeRenderer'
 
 function PagedResumeRenderer({ markdown }) {
     const printRef = useRef(null)
+    const hiddenPrintRef = useRef(null)
     const [pageBreakPositions, setPageBreakPositions] = useState([])
 
     useEffect(() => {
@@ -25,47 +26,48 @@ function PagedResumeRenderer({ markdown }) {
     }, [markdown])
 
     const detectPageBreaks = () => {
-        if (!printRef.current) return
+        if (!printRef.current || !hiddenPrintRef.current) return
 
-        const container = printRef.current
-        const pageBreakElements = Array.from(container.querySelectorAll('[style*="page-break"]'))
+        // Use the hidden print-container for measurements (what Puppeteer sees)
+        const printContainer = hiddenPrintRef.current.firstElementChild
+        const displayContainer = printRef.current
+        const firstChild = displayContainer.firstElementChild
         
-        const firstChild = container.firstElementChild
-        if (!firstChild) return
+        if (!printContainer || !firstChild) return
         
-        const contentHeight = firstChild.scrollHeight
+        // Measure from print container (accurate for PDF)
+        const printHeight = printContainer.scrollHeight
         const pageHeight = 10 * 96 // 10 inches of content per page
         
-        console.log('Content height:', contentHeight)
+        console.log('Print container height:', printHeight)
+        console.log('Display container first child height:', firstChild.scrollHeight)
+        
+        // Find manual page breaks in display container
+        const pageBreakElements = Array.from(displayContainer.querySelectorAll('[style*="page-break"]'))
         console.log('Found manual page break elements:', pageBreakElements.length)
         
         const allBreaks = []
         
-        // Get manual page break positions
+        // Get manual page break positions from display
         const manualBreaks = pageBreakElements.map((elem, index) => {
             const offsetTop = elem.offsetTop
             console.log(`Manual page break ${index + 1} at:`, offsetTop, 'px')
             return offsetTop
         }).sort((a, b) => a - b)
         
-        // Calculate natural breaks between manual breaks (and before first, after last)
+        // Create segments
         const segments = []
         
-        // Segment before first manual break (if any)
         if (manualBreaks.length > 0) {
             segments.push({ start: 0, end: manualBreaks[0] })
+            
+            for (let i = 0; i < manualBreaks.length - 1; i++) {
+                segments.push({ start: manualBreaks[i], end: manualBreaks[i + 1] })
+            }
+            
+            segments.push({ start: manualBreaks[manualBreaks.length - 1], end: firstChild.scrollHeight })
         } else {
-            segments.push({ start: 0, end: contentHeight })
-        }
-        
-        // Segments between manual breaks
-        for (let i = 0; i < manualBreaks.length - 1; i++) {
-            segments.push({ start: manualBreaks[i], end: manualBreaks[i + 1] })
-        }
-        
-        // Segment after last manual break (if any)
-        if (manualBreaks.length > 0) {
-            segments.push({ start: manualBreaks[manualBreaks.length - 1], end: contentHeight })
+            segments.push({ start: 0, end: firstChild.scrollHeight })
         }
         
         console.log('Content segments:', segments)
@@ -77,15 +79,30 @@ function PagedResumeRenderer({ markdown }) {
             
             console.log(`Segment ${segIndex}: height=${segmentHeight}px, pages=${numPagesInSegment}`)
             
-            // Add natural breaks for this segment
             for (let i = 1; i < numPagesInSegment; i++) {
-                // Different adjustments for different segments
-                // First segment (before any manual breaks) needs +20px
-                // Later segments need -10px
-                const adjustment = segIndex === 0 ? 20 : -10
-                const naturalBreak = segment.start + (i * pageHeight) + adjustment
+                // Calculate natural break position
+                // Use print container measurements to determine adjustment
+                const basePosition = segment.start + (i * pageHeight)
+                
+                // Dynamic adjustment: compare rendering vs expected
+                // First page typically needs slight downward adjustment due to initial spacing
+                // Subsequent pages in later segments may need slight upward adjustment
+                const heightRatio = firstChild.scrollHeight / printHeight
+                const isFirstSegment = segIndex === 0
+                
+                // Adaptive adjustment based on rendering difference
+                let adjustment = 0
+                if (Math.abs(heightRatio - 1.0) > 0.01) {
+                    // If there's significant height difference, apply proportional adjustment
+                    adjustment = isFirstSegment ? 20 : -10
+                } else {
+                    // Minimal adjustment for well-matched rendering
+                    adjustment = isFirstSegment ? 10 : -5
+                }
+                
+                const naturalBreak = basePosition + adjustment
                 allBreaks.push(naturalBreak)
-                console.log(`  Natural break ${i} in segment ${segIndex} at:`, naturalBreak, `px (${adjustment > 0 ? '+' : ''}${adjustment}px adj)`)
+                console.log(`  Natural break ${i} in segment ${segIndex} at:`, naturalBreak, `px (adj: ${adjustment}px, ratio: ${heightRatio.toFixed(3)})`)
             }
         })
         
@@ -102,13 +119,13 @@ function PagedResumeRenderer({ markdown }) {
     return (
         <div className="pages-wrapper">
             {/* Continuous content for PDF export (hidden on screen, visible in print) */}
-            <div className="print-container">
+            <div className="print-container" ref={hiddenPrintRef}>
                 <ResumeRenderer markdown={markdown} />
             </div>
             
             {/* Screen preview - continuous content with page boundaries */}
             <div className="pages-container">
-                <div 
+                <div
                     ref={printRef}
                     className="resume-container"
                     style={{
@@ -119,7 +136,7 @@ function PagedResumeRenderer({ markdown }) {
                     }}
                 >
                     <ResumeRenderer markdown={markdown} />
-                    
+
                     {/* Visual page break indicators */}
                     {pageBreakPositions.map((position, i) => (
                         <div
