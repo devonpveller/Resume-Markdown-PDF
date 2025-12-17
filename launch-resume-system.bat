@@ -18,7 +18,7 @@ timeout /t 1 /nobreak >nul
 echo.
 
 echo Syncing latest resume.md to React app...
-copy resume.lol\source\resume.md export-to-pdf\public\resume.md >nul
+copy source\resume.md export-to-pdf\public\resume.md >nul
 
 echo Ensuring dependencies are installed...
 cd export-to-pdf
@@ -34,7 +34,7 @@ echo.
 if not exist export-to-pdf\dist (
     echo Building React app...
     cd export-to-pdf
-    copy ..\resume.lol\source\resume.md public\resume.md >nul
+    copy ..\source\resume.md public\resume.md >nul
     call npm run build
     if errorlevel 1 (
         echo Build failed

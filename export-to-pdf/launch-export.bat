@@ -8,7 +8,7 @@ cd /d "%~dp0"
 
 REM Copy latest resume.md to public folder
 echo 📋 Copying latest resume...
-copy "..\resume.lol\source\resume.md" "public\resume.md" >nul
+copy "..\source\resume.md" "public\resume.md" >nul
 
 REM Check if node_modules exists
 if not exist "node_modules\" (
