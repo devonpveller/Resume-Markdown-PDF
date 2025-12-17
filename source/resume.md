@@ -31,9 +31,22 @@ Formatted for resume.lol
 
 *IST &mdash; UCF &mdash; METIL (Mixed Emerging Technology Integration Lab)*
 <div class="newline"></div>
-Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12, Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
+Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12 (DOE), Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
 
 ## Experience
+### DOE &mdash; Quickstart <span class="spacer"></span> 2025 - Present
+*Lead Developer, Technical Artist*
+<div class="newline"></div>
+Training future DOE employees through the QuickStart program through guided hands-on development of rapid implementation of XR technology for DOE training objectives.
+
+- Led the development of 4 modular XR projects across 4 platforms (holographic displays to XR headsets), delivering 16 projects in 5 months, while mentoring 7+ developers in XR best practices, architecture, and technical problem-solving through daily code reviews and pair programming.
+<!-- - Fostered a collaborative team environment by facilitating knowledge sharing and open communication using industry-leading tools, improving team cohesion and project efficiency over the program duration. -->
+<!-- - Through mentorship and guidance, enabled 57% of mentees to secure full-time positions in XR development or related fields post-program completion. -->
+
+<div class="newline"></div>
+Technologies: Unity, Unreal Engine, Senseglove, MR (Mixed Reality), Holographic Displays
+<div class="newline"></div>
+
 ### DOE &mdash; Senseglove Glovebox Scenario (Year 2) <span class="spacer"></span> 2025
 
 *Delivered | Lead Developer, Technical Artist, & Art Direction*
@@ -69,8 +82,6 @@ Led end-to-end development of role-based AR radiological training for 7+ concurr
 <div class="newline"></div>
 Technologies: Unity, OpenXR, C#, NGO (Netcode for GameObjects), Unity Services, AR, Magic Leap 2
 <div class="newline"></div>
-
-<div style="page-break-before: always;"></div>
 
 ### DOE &mdash; SMART Interactive Scenario <span class="spacer"></span> 2023
 
@@ -119,7 +130,6 @@ Developed end to end, UX/UI design and art direction for real-time digital twin 
 <div class="newline"></div>
 Technologies: Unreal Engine, C++, Data Pipeline, Pathfinding Algorithms, Blueprint, iOS/Android
 <div class="newline"></div>
-<div style="page-break-before: always;"></div>
 
 ### VA &mdash; VAPPE <span class="spacer"></span> 2021 &mdash; 2023
 
