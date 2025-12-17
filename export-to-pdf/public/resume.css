@@ -18,7 +18,7 @@ body {
 }
 
 .newline {
-    padding-bottom: 4px;
+    padding-bottom: 6px;
 }
 
 hr.pagebreak {
@@ -102,7 +102,8 @@ ul {
     padding-right: 24px;
 }
 
-o>ul {
+/* header info content */
+.headerInfo>ul {
     display: flex;
     text-align: center;
     justify-content: center;
