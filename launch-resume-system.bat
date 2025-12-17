@@ -9,21 +9,27 @@ echo.
 
 cd /d "%~dp0"
 
+echo Checking for existing server on port 3000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000 ^| findstr LISTENING') do (
+    echo Found process using port 3000 (PID: %%a^), terminating...
+    taskkill /F /PID %%a >nul 2>&1
+)
+timeout /t 1 /nobreak >nul
+echo.
+
 echo Syncing latest resume.md to React app...
 copy resume.lol\source\resume.md export-to-pdf\public\resume.md >nul
 
-if not exist export-to-pdf\node_modules (
-    echo Installing dependencies...
-    cd export-to-pdf
-    call npm install
-    if errorlevel 1 (
-        echo Failed to install dependencies
-        pause
-        exit /b 1
-    )
-    cd ..
-    echo.
+echo Ensuring dependencies are installed...
+cd export-to-pdf
+call npm install
+if errorlevel 1 (
+    echo Failed to install dependencies
+    pause
+    exit /b 1
 )
+cd ..
+echo.
 
 if not exist export-to-pdf\dist (
     echo Building React app...
@@ -40,9 +46,7 @@ if not exist export-to-pdf\dist (
 )
 
 echo Starting React dev server on http://localhost:3000...
-cd export-to-pdf
-start "Resume System" cmd /k "npm run dev 2>nul || echo Server stopped"
-cd ..
+start "Resume System" cmd /k "cd /d "%~dp0export-to-pdf" && npm run dev"
 echo.
 
 echo Starting file watcher for auto-sync...
