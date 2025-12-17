@@ -6,39 +6,35 @@
 
 ## Overview
 
-This guide provides complete step-by-step instructions for building an automated PDF export system that generates 1:1 pixel-perfect PDFs from the resume.lol markdown format. The system will:
+This guide provides complete step-by-step instructions for building an automated PDF export system that generates 1:1 pixel-perfect PDFs from resume markdown format. The system will:
 
-1. **Preserve existing preview.html** - Keep current live preview system working
-2. **Add React-based export** - Build dedicated export app using React + Vite
-3. **Automate with Puppeteer** - Use headless Chrome for true 1:1 PDF rendering
-4. **Unified batch launch** - Double-click ONE batch file to:
+1. **React-based preview and export** - Build dedicated app using React + Vite
+2. **Automate with Puppeteer** - Use headless Chrome for true 1:1 PDF rendering
+3. **Unified batch launch** - Double-click ONE batch file to:
    - Install all dependencies automatically (first run)
    - Build React app automatically (first run)
-   - Start BOTH preview server AND export server
+   - Start development server with live preview
    - Provide interactive menu for exporting PDFs
-   - Keep both servers running for live development
    - Stop all services cleanly on exit
 
 ## Architecture
 
 ```
-resume.lol/
-├── preview.html                    ← KEEP: Existing preview (unchanged)
-├── start-preview-server.bat        ← KEEP: Preview launcher (unchanged)
-└── source/
-    ├── resume.md
-    ├── resume.css
-    └── settings.css
+source/                             ← Resume source files
+├── resume.md
+├── resume.css
+└── settings.css
 
-export-to-pdf/                      ← NEW: PDF export system
+export-to-pdf/                      ← PDF export and preview system
 ├── package.json
 ├── vite.config.js
-├── launch-export.bat               ← NEW: Easy launch (double-click)
+├── launch-export.bat               ← Easy launch (double-click)
 ├── scripts/
-│   └── export-pdf.js               ← NEW: Puppeteer automation
+│   └── export-pdf.js               ← Puppeteer automation
 ├── public/
-│   ├── resume.css                  ← SYMLINK or COPY
-│   └── settings.css                ← SYMLINK or COPY
+│   ├── resume.md                   ← SYNCED from source/
+│   ├── resume.css                  ← SYNCED from source/
+│   └── settings.css                ← SYNCED from source/
 ├── src/
 │   ├── main.jsx
 │   ├── App.jsx
@@ -162,8 +158,8 @@ function App() {
   useEffect(() => {
     async function loadResume() {
       try {
-        // Fetch from parent directory
-        const response = await fetch('../resume.lol/source/resume.md')
+        // Fetch from public directory
+        const response = await fetch('/resume.md')
         if (!response.ok) throw new Error('Failed to load resume.md')
         
         const markdown = await response.text()
@@ -368,14 +364,14 @@ export default ResumeRenderer
 
 **Windows Command**:
 ```batch
-copy "..\resume.lol\source\resume.css" "public\resume.css"
-copy "..\resume.lol\source\settings.css" "public\settings.css"
+copy "..\source\resume.css" "public\resume.css"
+copy "..\source\settings.css" "public\settings.css"
 ```
 
 **Alternative (Create Symlinks for Auto-Updates)**:
 ```batch
-mklink "public\resume.css" "..\..\resume.lol\source\resume.css"
-mklink "public\settings.css" "..\..\resume.lol\source\settings.css"
+mklink "public\resume.css" "..\..\source\resume.css"
+mklink "public\settings.css" "..\..\source\settings.css"
 ```
 
 **Note**: If using symlinks, any updates to the original CSS will automatically reflect in the export app.
@@ -990,18 +986,18 @@ deviceScaleFactor: 3  // Higher quality, larger file
 
 ### Updating Resume Content
 
-1. Edit `resume.lol/source/resume.md`
-2. Run `export-resume-pdf.bat` → Option 1 or 2
+1. Edit `source/resume.md`
+2. Run batch launcher to sync changes to export-to-pdf/public/
 3. PDF automatically reflects changes
 
 ### Updating Styles
 
 **If using symlinks**:
-1. Edit `resume.lol/source/resume.css` or `settings.css`
+1. Edit `source/resume.css` or `settings.css`
 2. Changes automatically available to export app
 
 **If using copies**:
-1. Edit `resume.lol/source/resume.css` or `settings.css`
+1. Edit `source/resume.css` or `settings.css`
 2. Re-run copy commands from STEP 4
 3. Rebuild: `npm run build`
 

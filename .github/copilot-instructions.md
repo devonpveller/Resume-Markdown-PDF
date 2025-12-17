@@ -2,22 +2,25 @@
 
 ## Project Overview
 
-This is a personal resume repository for Devon Veller, a game developer with 14 years of experience. The repository maintains multiple resume versions and formats, with the primary focus on generating PDF resumes using the resume.lol platform.
+This is a personal resume repository for Devon Veller, a game developer with 14 years of experience. The repository maintains multiple resume versions and formats, with the primary focus on generating PDF resumes using a React-based PDF export system.
 
 ## Repository Structure
 
-- **`resume.lol/`** - Production resume formatted for resume.lol platform
-  - `source/resume.md` - Active resume content using resume.lol markdown format
-  - `source/resume.css` - Custom styling (Inter font, black text, uppercase headers)
-  - `source/settings.css` - PDF page settings (letter size, 0.5in margins)
-  - `Resume-Template.md` - Original resume.lol template for reference
+- **`source/`** - Active resume source files
+  - `resume.md` - Active resume content using resume.lol markdown format
+  - `resume.css` - Custom styling (Inter font, black text, uppercase headers)
+  - `settings.css` - PDF page settings (letter size, 0.5in margins)
+- **`export-to-pdf/`** - React-based PDF export and preview system
+  - `public/` - Contains synced copies of source files for React app
+  - `src/` - React components for rendering and exporting
+  - `scripts/` - PDF export automation scripts
 - **`archive/`** - Historical resume versions and content repository
   - `Resume-Content-Archive.md` - Working notes, alternative summaries, ChatGPT links, drafts
   - `Resume_03_FullListExperience_2025.md` - Full-detail version without resume.lol formatting
 
-## Resume.lol Format Conventions
+## Resume Markdown Format Conventions
 
-The active resume (`resume.lol/source/resume.md`) uses a specific markdown format:
+The active resume (`source/resume.md`) uses a specific markdown format:
 
 1. **Variable System**: Declare redactable variables at the top using `@VARIABLE=value||redacted_value`
    - `@REDACTED=false` controls whether redacted values are shown
@@ -59,7 +62,7 @@ When updating experience sections, maintain these highlight patterns:
 
 ## STAR Method for Resume Bullets
 
-**CRITICAL**: All resume bullet points in `resume.lol/source/resume.md` MUST follow the STAR method (Situation, Task, Action, Result) to transform generic duties into powerful, quantifiable achievements.
+**CRITICAL**: All resume bullet points in `source/resume.md` MUST follow the STAR method (Situation, Task, Action, Result) to transform generic duties into powerful, quantifiable achievements.
 
 ### STAR Framework
 
