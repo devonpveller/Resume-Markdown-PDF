@@ -38,16 +38,27 @@ async function exportPDF() {
         await page.evaluateHandle('document.fonts.ready')
 
         // Additional wait for rendering stability
-        await page.waitForTimeout(2000)
+        await new Promise(resolve => setTimeout(resolve, 2000))
 
         console.log('✨ Generating PDF...')
 
         // Generate timestamp for filename
         const timestamp = new Date().toISOString().split('T')[0]
 
-        // Use custom directory if set, otherwise use default
-        const exportDir = process.env.EXPORT_DIR || path.join(__dirname, '..')
-        const outputPath = path.join(exportDir, `Resume-Devon-Veller-${timestamp}.pdf`)
+        // Determine output path
+        let outputPath
+        if (process.env.EXPORT_DIR) {
+            // If EXPORT_DIR ends with .pdf, use it as the full path
+            if (process.env.EXPORT_DIR.endsWith('.pdf')) {
+                outputPath = process.env.EXPORT_DIR
+            } else {
+                // Otherwise treat it as a directory
+                outputPath = path.join(process.env.EXPORT_DIR, `Resume-Devon-Veller-${timestamp}.pdf`)
+            }
+        } else {
+            // Default to export-to-pdf directory
+            outputPath = path.join(__dirname, '..', `Resume-Devon-Veller-${timestamp}.pdf`)
+        }
 
         console.log('Export path:', outputPath)
 
