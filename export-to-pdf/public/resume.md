@@ -31,18 +31,17 @@ Formatted for resume.lol
 
 *IST &mdash; UCF &mdash; METIL (Mixed Emerging Technology Integration Lab)*
 <div class="newline"></div>
-Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12, Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
+Multidisciplinary game developer with 14 years bridging art, engineering, and systems design to deliver high-impact interactive training solutions. Executed 300+ products for Y12 (DOE), Amazon, and Boeing by architecting front-end gameplay systems, back-end infrastructure, and real-time performance optimizations in serious games. Led cross-disciplinary R&D teams leveraging AR/VR/MR technologies, driving innovation in interactive training experiences from concept through deployment while maintaining consistent alignment with client objectives through proactive project leadership.
 
 ## Experience
 ### DOE &mdash; Quickstart <span class="spacer"></span> 2025 - Present
 *Lead Developer, Technical Artist*
 <div class="newline"></div>
-Training 7+ future DOE employees through the Quickstart program as a hands-on development experience focused on learning rapid development of XR technology implementation challenges for DOE training objectives.
+Training future DOE employees through the QuickStart program through guided hands-on development of rapid implementation of XR technology for DOE training objectives.
 
-- Mentored 7+ developers in XR development best practices, project architecture, and technical problem-solving through weekly code reviews and pair programming, accelerating team proficiency and project delivery.
+- Led the development of 4 modular XR projects across 4 platforms (holographic displays to XR headsets), delivering 16 projects in 5 months, while mentoring 7+ developers in XR best practices, architecture, and technical problem-solving through daily code reviews and pair programming.
 <!-- - Fostered a collaborative team environment by facilitating knowledge sharing and open communication using industry-leading tools, improving team cohesion and project efficiency over the program duration. -->
 <!-- - Through mentorship and guidance, enabled 57% of mentees to secure full-time positions in XR development or related fields post-program completion. -->
-- Led the development of 4 modular projects across 4 platforms—ranging from holographic displays to XR headsets—delivering 16 total projects within a 6-month period.
 
 <div class="newline"></div>
 Technologies: Unity, Unreal Engine, Senseglove, MR (Mixed Reality), Holographic Displays
