@@ -5,6 +5,12 @@
     "main": "electron/main.cjs",
     "description": "Desktop application for creating professional resumes with PDF export",
     "author": "Devon Veller",
+    "license": "SEE LICENSE IN LICENSE",
+    "homepage": "https://github.com/devonveller/resume-pdf-exporter",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/devonveller/resume-pdf-exporter"
+    },
     "scripts": {
         "dev": "vite",
         "build": "vite build",

@@ -1,6 +1,7 @@
 {
     "appId": "com.devonveller.resumeexporter",
     "productName": "Resume PDF Exporter",
+    "copyright": "Copyright © 2025 Devon Veller",
     "directories": {
         "output": "dist-electron",
         "buildResources": "build"
@@ -42,7 +43,8 @@
         "allowToChangeInstallationDirectory": true,
         "createDesktopShortcut": true,
         "createStartMenuShortcut": true,
-        "shortcutName": "Resume PDF Exporter"
+        "shortcutName": "Resume PDF Exporter",
+        "license": "LICENSE"
     },
     "portable": {
         "artifactName": "${productName}-${version}-portable.${ext}"

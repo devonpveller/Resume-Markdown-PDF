@@ -134,7 +134,14 @@ function createMenu() {
                             type: 'info',
                             title: 'About Resume PDF Exporter',
                             message: 'Resume PDF Exporter v1.0.0',
-                            detail: 'A desktop application for creating professional resumes with live preview and PDF export.\n\nBuilt with Electron, React, and Vite.'
+                            detail: 'A desktop application for creating professional resumes with live preview and PDF export.\n\n' +
+                                'Created by Devon Veller\n' +
+                                'Copyright © 2025 Devon Veller\n\n' +
+                                'This software is open source and free for non-commercial use only.\n' +
+                                'You are free to use, modify, and distribute this software for non-commercial purposes, with attribution.\n' +
+                                'Commercial use is strictly prohibited without permission.\n\n' +
+                                'Built with Electron, React, and Vite.\n\n' +
+                                'GitHub: github.com/devonveller/resume-pdf-exporter'
                         });
                     }
                 }
