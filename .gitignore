@@ -1,0 +1,31 @@
+# User's personal resume - never commit
+source/resume.md
+export-to-pdf/public/resume.md
+
+# Keep the template
+!resume-template.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+
+# Electron build output
+export-to-pdf/dist-electron/
+
+# Generated PDFs
+*.pdf
+
+# Development
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

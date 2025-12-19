@@ -1,0 +1,71 @@
+{
+    "appId": "com.devonveller.resumeexporter",
+    "productName": "Resume PDF Exporter",
+    "copyright": "Copyright © 2025 Devon Veller",
+    "directories": {
+        "output": "dist-electron",
+        "buildResources": "build"
+    },
+    "files": [
+        "dist/**/*",
+        "electron/**/*",
+        "public/**/*",
+        "scripts/**/*",
+        "package.json",
+        "!public/resume.md"
+    ],
+    "extraResources": [
+        {
+            "from": "../resume-template.md",
+            "to": "resume-template.md"
+        }
+    ],
+    "win": {
+        "target": [
+            {
+                "target": "nsis",
+                "arch": [
+                    "x64"
+                ]
+            },
+            {
+                "target": "portable",
+                "arch": [
+                    "x64"
+                ]
+            }
+        ],
+        "icon": "build/icon.ico",
+        "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "Resume PDF Exporter",
+        "license": "LICENSE"
+    },
+    "portable": {
+        "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "mac": {
+        "target": [
+            "dmg",
+            "zip"
+        ],
+        "category": "public.app-category.productivity",
+        "icon": "build/icon.icns",
+        "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "linux": {
+        "target": [
+            "AppImage",
+            "deb"
+        ],
+        "category": "Office",
+        "icon": "build/icon.png",
+        "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "publish": null
+}
