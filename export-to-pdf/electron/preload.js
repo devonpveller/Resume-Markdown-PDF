@@ -10,5 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     watchResume: () => ipcRenderer.invoke('watch-resume'),
     onResumeUpdated: (callback) => ipcRenderer.on('resume-updated', callback),
     exportPDF: () => ipcRenderer.invoke('export-pdf'),
+    createFromTemplate: () => ipcRenderer.invoke('create-from-template'),
+    importResume: () => ipcRenderer.invoke('import-resume'),
+    createBlank: () => ipcRenderer.invoke('create-blank'),
+    resetToWelcome: () => ipcRenderer.invoke('reset-to-welcome'),
     isElectron: true
 });

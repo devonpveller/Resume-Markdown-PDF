@@ -159,12 +159,6 @@ async function createResumeFromTemplate() {
             fs.writeFileSync(resumePath, basicTemplate);
         }
 
-        await dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: 'Template Created',
-            message: 'New resume created from template!'
-        });
-
         if (mainWindow) {
             mainWindow.reload();
         }
@@ -185,12 +179,6 @@ async function importResume() {
         try {
             const resumePath = getResumePath();
             fs.copyFileSync(fileResult.filePaths[0], resumePath);
-
-            await dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'File Imported',
-                message: 'Resume imported successfully!'
-            });
 
             if (mainWindow) {
                 setTimeout(() => {
@@ -340,6 +328,36 @@ ipcMain.handle('open-resume-file', async () => {
 
 ipcMain.handle('get-resume-path', () => {
     return getResumePath();
+});
+
+ipcMain.handle('create-from-template', async () => {
+    await createResumeFromTemplate();
+});
+
+ipcMain.handle('import-resume', async () => {
+    await importResume();
+});
+
+ipcMain.handle('create-blank', async () => {
+    const resumePath = getResumePath();
+    const blankResume = `# Your Name\n\n## Professional Summary\n\n## Experience\n\n## Skills\n`;
+    fs.writeFileSync(resumePath, blankResume);
+
+    if (mainWindow) {
+        setTimeout(() => {
+            mainWindow.reload();
+        }, 500);
+    }
+});
+
+ipcMain.handle('reset-to-welcome', async () => {
+    const resumePath = getResumePath();
+    if (fs.existsSync(resumePath)) {
+        fs.unlinkSync(resumePath);
+    }
+    if (mainWindow) {
+        mainWindow.reload();
+    }
 });
 
 ipcMain.handle('read-resume', async () => {
@@ -585,10 +603,10 @@ ipcMain.handle('export-pdf', async () => {
 app.whenReady().then(async () => {
     createWindow();
 
-    // Check for resume file after window is created
-    setTimeout(() => {
-        checkResumeFile();
-    }, 1000);
+    // Don't check for resume file - let welcome screen handle it
+    // setTimeout(() => {
+    //     checkResumeFile();
+    // }, 1000);
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {

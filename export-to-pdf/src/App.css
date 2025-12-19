@@ -52,7 +52,7 @@
     padding: 40px;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
@@ -61,35 +61,68 @@
     margin-bottom: 10px;
 }
 
-.welcome-screen > p {
+.welcome-screen>p {
     color: #666;
     margin-bottom: 30px;
 }
 
 .welcome-message {
     background: #f8f9fa;
-    padding: 20px;
+    padding: 30px;
     border-radius: 4px;
-    text-align: left;
 }
 
 .welcome-message h2 {
     color: #333;
     margin-top: 0;
+    margin-bottom: 10px;
 }
 
-.welcome-message ul {
-    list-style: none;
-    padding: 0;
+.welcome-message>p {
+    color: #666;
+    margin-bottom: 25px;
 }
 
-.welcome-message li {
-    padding: 10px 0;
-    border-bottom: 1px solid #e0e0e0;
+.welcome-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.welcome-message li:last-child {
-    border-bottom: none;
+.welcome-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 25px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.welcome-btn:hover {
+    border-color: #2196F3;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+    transform: translateY(-2px);
+}
+
+.welcome-btn .btn-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.welcome-btn .btn-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.welcome-btn .btn-desc {
+    font-size: 14px;
+    color: #666;
 }
 
 .controls {
@@ -384,7 +417,7 @@
     margin-bottom: 10px;
 }
 
-.welcome-screen > p {
+.welcome-screen>p {
     color: #666;
     font-size: 16px;
     margin-bottom: 30px;

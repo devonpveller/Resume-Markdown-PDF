@@ -179,18 +179,51 @@ function App() {
     }
 
     if (error) {
+        const handleCreateFromTemplate = async () => {
+            if (window.electronAPI?.createFromTemplate) {
+                await window.electronAPI.createFromTemplate();
+                loadResume();
+            }
+        };
+
+        const handleImportResume = async () => {
+            if (window.electronAPI?.importResume) {
+                await window.electronAPI.importResume();
+                loadResume();
+            }
+        };
+
+        const handleCreateBlank = async () => {
+            if (window.electronAPI?.createBlank) {
+                await window.electronAPI.createBlank();
+                loadResume();
+            }
+        };
+
         return (
             <div className="welcome-screen">
                 <h1>Welcome to Resume PDF Exporter</h1>
                 <p>Your professional resume toolkit with live preview and PDF export.</p>
                 <div className="welcome-message">
                     <h2>Getting Started</h2>
-                    <p>No resume file found. Use the menu to:</p>
-                    <ul>
-                        <li><strong>File → New Resume from Template</strong> - Start with a pre-formatted template</li>
-                        <li><strong>File → Import Resume</strong> - Import an existing resume.md file</li>
-                        <li><strong>File → Create Blank</strong> - Start from scratch</li>
-                    </ul>
+                    <p>Choose how you'd like to begin:</p>
+                    <div className="welcome-buttons">
+                        <button onClick={handleCreateFromTemplate} className="welcome-btn">
+                            <span className="btn-icon">📄</span>
+                            <span className="btn-title">New from Template</span>
+                            <span className="btn-desc">Start with a pre-formatted template</span>
+                        </button>
+                        <button onClick={handleImportResume} className="welcome-btn">
+                            <span className="btn-icon">📁</span>
+                            <span className="btn-title">Import Resume</span>
+                            <span className="btn-desc">Import an existing resume.md file</span>
+                        </button>
+                        <button onClick={handleCreateBlank} className="welcome-btn">
+                            <span className="btn-icon">✏️</span>
+                            <span className="btn-title">Create Blank</span>
+                            <span className="btn-desc">Start from scratch</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         )
@@ -205,13 +238,26 @@ function App() {
                 </div>
                 <div className="button-group">
                     {isElectron && (
-                        <button
-                            onClick={() => window.electronAPI.openResumeFile()}
-                            className="edit-btn"
-                            title="Open resume.md in your default editor"
-                        >
-                            📝 Edit Resume
-                        </button>
+                        <>
+                            <button
+                                onClick={() => window.electronAPI.openResumeFile()}
+                                className="edit-btn"
+                                title="Open resume.md in your default editor"
+                            >
+                                📝 Edit Resume
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (confirm('Are you sure you want to start over? This will delete your current resume.')) {
+                                        await window.electronAPI.resetToWelcome();
+                                    }
+                                }}
+                                className="reset-btn"
+                                title="Return to welcome screen"
+                            >
+                                🔄 Start Over
+                            </button>
+                        </>
                     )}
                     <button onClick={handleExport} disabled={exporting} className="export-btn">
                         {exporting ? 'Exporting...' : 'Export PDF'}
