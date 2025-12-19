@@ -1,8 +1,32 @@
-# Resume-Devon-Veller
+# Resume PDF Exporter
 
-Personal resume repository with React-based PDF export system for Devon Veller.
+A professional desktop application for creating and exporting ATS-friendly resumes with live preview and one-click PDF generation.
 
-## Quick Start
+## 📥 Download
+
+**Desktop Application (Recommended)**
+
+Download the latest release for Windows:
+- **[Resume PDF Exporter v1.0.0 - Installer](https://github.com/devonveller/resume-pdf-exporter/releases/latest)** (recommended)
+- **[Resume PDF Exporter v1.0.0 - Portable](https://github.com/devonveller/resume-pdf-exporter/releases/latest)** (no installation required)
+
+### Installation
+1. Download the installer or portable version
+2. Run the executable
+3. The app will prompt you to create a resume from the template
+4. Edit your resume and export to PDF!
+
+**Features:**
+- ✨ Live preview with automatic page breaks
+- 📝 Built-in resume editor integration
+- 📄 ATS-friendly PDF export (text-based, not images)
+- 🔄 Auto-refresh on file changes
+- 🎨 Professional styling with Inter font
+- 🔒 100% local - no telemetry or data collection
+
+## 🛠️ Development Setup
+
+**For developers who want to customize or contribute:**
 
 **Launch the resume preview and export system:**
 ```bash
