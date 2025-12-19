@@ -116,6 +116,7 @@ const exportApiPlugin = () => ({
 
 export default defineConfig({
     plugins: [react(), exportApiPlugin()],
+    base: './', // Use relative paths for Electron compatibility
     server: {
         port: 3000,
         strictPort: true,
@@ -126,7 +127,16 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
-        assetsDir: 'assets'
+        assetsDir: 'assets',
+        emptyOutDir: true,
+        target: 'chrome130', // Match Electron 39's Chrome version
+        minify: false, // Disable minification to debug
+        rollupOptions: {
+            output: {
+                manualChunks: undefined, // Prevent code splitting
+                format: 'iife' // Use IIFE instead of ES modules for Electron
+            }
+        }
     },
     resolve: {
         alias: {
