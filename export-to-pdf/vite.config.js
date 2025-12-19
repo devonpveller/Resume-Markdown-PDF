@@ -116,6 +116,7 @@ const exportApiPlugin = () => ({
 
 export default defineConfig({
     plugins: [react(), exportApiPlugin()],
+    base: './', // Use relative paths for Electron compatibility
     server: {
         port: 3000,
         strictPort: true,
@@ -126,7 +127,8 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
-        assetsDir: 'assets'
+        assetsDir: 'assets',
+        emptyOutDir: true
     },
     resolve: {
         alias: {

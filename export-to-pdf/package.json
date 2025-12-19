@@ -2,7 +2,7 @@
     "name": "resume-pdf-exporter",
     "version": "1.0.0",
     "type": "module",
-    "main": "electron/main.js",
+    "main": "electron/main.cjs",
     "description": "Desktop application for creating professional resumes with PDF export",
     "author": "Devon Veller",
     "scripts": {

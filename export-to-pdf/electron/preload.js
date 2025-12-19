@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readResume: () => ipcRenderer.invoke('read-resume'),
     watchResume: () => ipcRenderer.invoke('watch-resume'),
     onResumeUpdated: (callback) => ipcRenderer.on('resume-updated', callback),
+    exportPDF: () => ipcRenderer.invoke('export-pdf'),
     isElectron: true
 });

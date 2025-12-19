@@ -1,13 +1,8 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu } from 'electron';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-import { spawn } from 'child_process';
-import { marked } from 'marked';
-import puppeteer from 'puppeteer';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const { marked } = require('marked');
+const puppeteer = require('puppeteer');
 
 let mainWindow;
 let viteServer;
@@ -82,7 +77,6 @@ function createMenu() {
                     accelerator: 'CmdOrCtrl+E',
                     click: async () => {
                         const resumePath = getResumePath();
-                        const { shell } = await import('electron');
                         await shell.openPath(resumePath);
                     }
                 },
@@ -90,7 +84,6 @@ function createMenu() {
                     label: 'Show Resume in Folder',
                     click: async () => {
                         const resumePath = getResumePath();
-                        const { shell } = await import('electron');
                         shell.showItemInFolder(resumePath);
                     }
                 },
@@ -343,7 +336,6 @@ ipcMain.handle('select-export-directory', async () => {
 
 ipcMain.handle('open-resume-file', async () => {
     const resumePath = getResumePath();
-    const { shell } = await import('electron');
     const result = await shell.openPath(resumePath);
     
     // If openPath fails, show error dialog
@@ -435,7 +427,167 @@ ipcMain.handle('export-pdf', async () => {
         const html = marked.parse(processedContent);
         
         // Complete CSS matching resume.css and settings.css
-        const completeCSS = `\n            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');\n            \n            * {\n                box-sizing: border-box;\n            }\n            \n            body {\n                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n                font-size: 14px;\n                line-height: 1.5;\n                color: black;\n                margin: 0;\n                padding: 0;\n            }\n            \n            h1 {\n                font-size: 24px;\n                font-weight: 700;\n                text-transform: uppercase;\n                text-align: center;\n                margin: 0 0 0.5em 0;\n                color: black;\n            }\n            \n            h2 {\n                font-size: 16px;\n                font-weight: 700;\n                text-transform: uppercase;\n                margin: 1.5em 0 0.5em 0;\n                border-bottom: 1px solid black;\n                padding-bottom: 0.25em;\n                color: black;\n            }\n            \n            h3 {\n                font-size: 15px;\n                font-weight: 600;\n                margin: 1em 0 0.5em 0;\n                color: black;\n            }\n            \n            /* Handle spacer in h3 for date alignment */\n            h3 .spacer {\n                display: inline-block;\n                flex-grow: 1;\n            }\n            \n            /* Header info styling */\n            .section.headerInfo {\n                display: flex;\n                justify-content: space-between;\n                gap: 2em;\n                margin-bottom: 1em;\n                flex-wrap: wrap;\n            }\n            \n            .headerInfo ul {\n                list-style: none;\n                padding: 0;\n                margin: 0;\n                flex: 1;\n            }\n            \n            .headerInfo li {\n                margin: 0.25em 0;\n                font-size: 14px;\n            }\n            \n            .headerInfo ul:last-child {\n                text-align: right;\n            }\n            \n            ul {\n                margin: 0.5em 0;\n                padding-left: 1.5em;\n            }\n            \n            li {\n                margin: 0.35em 0;\n            }\n            \n            a {\n                color: black;\n                text-decoration: none;\n            }\n            \n            strong {\n                font-weight: 600;\n                color: black;\n            }\n            \n            p {\n                margin: 0.5em 0;\n            }\n            \n            hr {\n                border: none;\n                border-top: 1px solid #ddd;\n                margin: 1em 0;\n            }\n            \n            /* Remove page break for PDF */\n            .page-break {\n                display: none;\n            }\n        `;\n        \n        const fullHtml = `\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"UTF-8\">\n    <style>${completeCSS}</style>\n</head>\n<body style=\"padding: 0.5in;\">\n    ${html}\n</body>\n</html>\n`;\n        \n        await page.setContent(fullHtml, { waitUntil: 'networkidle0' });\n        \n        // Ask user where to save\n        const result = await dialog.showSaveDialog(mainWindow, {\n            title: 'Save PDF',\n            defaultPath: `Resume-${new Date().toISOString().split('T')[0]}.pdf`,\n            filters: [{ name: 'PDF Files', extensions: ['pdf'] }]\n        });\n        \n        if (!result.canceled && result.filePath) {\n            await page.pdf({\n                path: result.filePath,\n                format: 'Letter',\n                margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },\n                printBackground: true\n            });\n            \n            await browser.close();\n            return { success: true, path: result.filePath };\n        }\n        \n        await browser.close();\n        return { success: false, error: 'Export cancelled' };\n    } catch (error) {\n        console.error('PDF export error:', error);\n        return { success: false, error: error.message };\n    }\n});
+        const completeCSS = `
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            body {
+                font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+                font-size: 14px;
+                font-weight: 400;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
+            
+            .spacer {
+                margin: 0px auto;
+            }
+            
+            .newline {
+                padding-bottom: 6px;
+            }
+            
+            hr.pagebreak {
+                page-break-after: always;
+                visibility: hidden;
+                margin: 0;
+                padding: 0;
+                height: 0;
+                border: none;
+            }
+            
+            div[style*="page-break-before"] {
+                padding-top: 40px;
+            }
+            
+            h1 {
+                order: 0;
+            }
+            
+            .headerInfo {
+                order: 1;
+            }
+            
+            h1, h2, h3, p, a, li {
+                color: black;
+            }
+            
+            h2 {
+                margin: 10px 0px;
+            }
+            
+            h3 {
+                margin: 6px 0px;
+            }
+            
+            h1 {
+                color: black;
+                text-transform: uppercase;
+                text-align: center;
+                font-size: 24px;
+                margin: 0;
+                padding: 0;
+            }
+            
+            h2 {
+                border-bottom: 1px solid #000000;
+                text-transform: uppercase;
+                font-size: 16px;
+                padding: 0;
+            }
+            
+            h3 {
+                display: flex;
+                font-size: 15px;
+                padding: 0;
+                justify-content: space-between;
+                page-break-inside: avoid;
+                page-break-after: avoid;
+            }
+            
+            p {
+                margin: 0;
+                padding: 0;
+            }
+            
+            a {
+                color: black;
+            }
+            
+            ul {
+                margin: 4px 0;
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+            
+            .headerInfo > ul {
+                display: flex;
+                text-align: center;
+                justify-content: center;
+                margin: 0px auto !important;
+                padding: 0;
+            }
+            
+            .headerInfo > ul:first-of-type {
+                margin-top: 6px !important;
+            }
+            
+            .headerInfo > ul > li {
+                display: inline;
+                white-space: pre;
+                list-style-type: none;
+            }
+            
+            .headerInfo > ul > li:not(:last-child) {
+                margin-right: 8px;
+            }
+            
+            .headerInfo > ul > li:not(:last-child):after {
+                content: "•";
+                margin-left: 8px;
+            }
+        `;
+        
+        const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>${completeCSS}</style>
+</head>
+<body>
+    ${html}
+</body>
+</html>
+`;
+        
+        await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
+        
+        // Ask user where to save
+        const result = await dialog.showSaveDialog(mainWindow, {
+            title: 'Save PDF',
+            defaultPath: `Resume-${new Date().toISOString().split('T')[0]}.pdf`,
+            filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+        });
+        
+        if (!result.canceled && result.filePath) {
+            await page.pdf({
+                path: result.filePath,
+                format: 'Letter',
+                margin: { top: '0.4in', right: '0.4in', bottom: '0.4in', left: '0.4in' },
+                printBackground: true
+            });
+            
+            await browser.close();
+            return { success: true, path: result.filePath };
+        }
+        
+        await browser.close();
+        return { success: false, error: 'Export cancelled' };
+    } catch (error) {
+        console.error('PDF export error:', error);
+        return { success: false, error: error.message };
+    }
+});
 
 // App lifecycle
 app.whenReady().then(async () => {

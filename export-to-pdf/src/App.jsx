@@ -107,15 +107,26 @@ function App() {
         setExportMessage('Exporting...')
 
         try {
-            const response = await fetch('/api/export-pdf', {
-                method: 'POST'
-            })
+            // Use Electron IPC if available
+            if (window.electronAPI && window.electronAPI.exportPDF) {
+                const result = await window.electronAPI.exportPDF();
+                if (result.success) {
+                    setExportMessage(`✓ PDF exported to: ${result.path}`);
+                } else {
+                    throw new Error(result.error || 'Export failed');
+                }
+            } else {
+                // Web mode - use API endpoint
+                const response = await fetch('/api/export-pdf', {
+                    method: 'POST'
+                })
 
-            if (!response.ok) throw new Error('Export failed')
+                if (!response.ok) throw new Error('Export failed')
 
-            const result = await response.json()
-            setExportMessage('✓ PDF exported successfully!')
-            setTimeout(() => setExportMessage(''), 3000)
+                const result = await response.json()
+                setExportMessage('✓ PDF exported successfully!')
+            }
+            setTimeout(() => setExportMessage(''), 5000)
         } catch (err) {
             setExportMessage('✗ Export failed: ' + err.message)
             setTimeout(() => setExportMessage(''), 5000)
@@ -130,10 +141,9 @@ function App() {
 
     const handleChangeDir = async () => {
         // In Electron, use native file dialog
-        if (isElectron && window.electronAPI) {
+        if (isElectron && window.electronAPI && window.electronAPI.selectExportDirectory) {
             const directory = await window.electronAPI.selectExportDirectory()
             if (directory) {
-                setCustomDir(directory)
                 setExportPath(directory)
                 setShowDirInput(false)
             }
@@ -194,7 +204,10 @@ function App() {
                     </button>
                     <div className="export-path-container">
                         <span className="export-info">Saves to: {exportPath}</span>
-                        <button onClick={() => setShowDirInput(!showDirInput)} className="change-dir-btn">
+                        <button 
+                            onClick={handleChangeDir} 
+                            className="change-dir-btn"
+                        >
                             {isElectron ? 'Choose Folder' : showDirInput ? 'Cancel' : 'Change Directory'}
                         </button>
                     </div>
