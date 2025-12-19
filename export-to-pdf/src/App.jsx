@@ -26,7 +26,7 @@ function App() {
     async function loadResume() {
         try {
             let markdown = '';
-            
+
             // Use Electron IPC if available (packaged app)
             if (window.electronAPI && window.electronAPI.readResume) {
                 const result = await window.electronAPI.readResume();
@@ -71,7 +71,7 @@ function App() {
                 console.log('Resume file changed (Electron watcher)...');
                 loadResume();
             });
-            
+
             // Get export path
             window.electronAPI.getResumePath()
                 .then(path => setExportPath(path))
@@ -179,7 +179,21 @@ function App() {
     }
 
     if (error) {
-        return <div className="error">Error loading resume: {error}</div>
+        return (
+            <div className="welcome-screen">
+                <h1>Welcome to Resume PDF Exporter</h1>
+                <p>Your professional resume toolkit with live preview and PDF export.</p>
+                <div className="welcome-message">
+                    <h2>Getting Started</h2>
+                    <p>No resume file found. Use the menu to:</p>
+                    <ul>
+                        <li><strong>File → New Resume from Template</strong> - Start with a pre-formatted template</li>
+                        <li><strong>File → Import Resume</strong> - Import an existing resume.md file</li>
+                        <li><strong>File → Create Blank</strong> - Start from scratch</li>
+                    </ul>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -191,8 +205,8 @@ function App() {
                 </div>
                 <div className="button-group">
                     {isElectron && (
-                        <button 
-                            onClick={() => window.electronAPI.openResumeFile()} 
+                        <button
+                            onClick={() => window.electronAPI.openResumeFile()}
                             className="edit-btn"
                             title="Open resume.md in your default editor"
                         >
@@ -204,8 +218,8 @@ function App() {
                     </button>
                     <div className="export-path-container">
                         <span className="export-info">Saves to: {exportPath}</span>
-                        <button 
-                            onClick={handleChangeDir} 
+                        <button
+                            onClick={handleChangeDir}
                             className="change-dir-btn"
                         >
                             {isElectron ? 'Choose Folder' : showDirInput ? 'Cancel' : 'Change Directory'}

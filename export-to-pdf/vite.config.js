@@ -128,7 +128,15 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         assetsDir: 'assets',
-        emptyOutDir: true
+        emptyOutDir: true,
+        target: 'chrome130', // Match Electron 39's Chrome version
+        minify: false, // Disable minification to debug
+        rollupOptions: {
+            output: {
+                manualChunks: undefined, // Prevent code splitting
+                format: 'iife' // Use IIFE instead of ES modules for Electron
+            }
+        }
     },
     resolve: {
         alias: {

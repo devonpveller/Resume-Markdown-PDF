@@ -46,6 +46,52 @@
     position: relative;
 }
 
+.welcome-screen {
+    max-width: 800px;
+    margin: 100px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.welcome-screen h1 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.welcome-screen > p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.welcome-message {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 4px;
+    text-align: left;
+}
+
+.welcome-message h2 {
+    color: #333;
+    margin-top: 0;
+}
+
+.welcome-message ul {
+    list-style: none;
+    padding: 0;
+}
+
+.welcome-message li {
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.welcome-message li:last-child {
+    border-bottom: none;
+}
+
 .controls {
     background: white;
     padding: 15px;
@@ -321,6 +367,66 @@
 
 .error {
     color: red;
+}
+
+.welcome-screen {
+    max-width: 600px;
+    margin: 80px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.welcome-screen h1 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.welcome-screen > p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.welcome-message {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 6px;
+    text-align: left;
+}
+
+.welcome-message h2 {
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: none;
+    text-transform: none;
+    font-size: 18px;
+}
+
+.welcome-message p {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.welcome-message ul {
+    list-style: none;
+    padding: 0;
+}
+
+.welcome-message li {
+    padding: 10px 0;
+    color: #555;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.welcome-message li:last-child {
+    border-bottom: none;
+}
+
+.welcome-message strong {
+    color: #000;
 }
 
 /* PDF export styles - remove padding when exporting */

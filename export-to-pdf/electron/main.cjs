@@ -23,12 +23,12 @@ const getSourcePath = () => {
     }
     // In packaged app, use user data directory (writable)
     const userDataPath = path.join(app.getPath('userData'), 'resume-data');
-    
+
     // Ensure directory exists
     if (!fs.existsSync(userDataPath)) {
         fs.mkdirSync(userDataPath, { recursive: true });
     }
-    
+
     return userDataPath;
 };
 
@@ -150,7 +150,7 @@ function createMenu() {
 async function createResumeFromTemplate() {
     const resumePath = getResumePath();
     const templatePath = getResumeTemplatePath();
-    
+
     try {
         if (fs.existsSync(templatePath)) {
             fs.copyFileSync(templatePath, resumePath);
@@ -158,13 +158,13 @@ async function createResumeFromTemplate() {
             const basicTemplate = `# Your Name\n\n## Professional Summary\n\n[Write your summary here]\n\n## Experience\n\n### Job Title, Company <span class="spacer"></span> Month Year — Present\n\n- [Your accomplishments]\n\n## Skills\n\n**Programming Languages:** Your skills here\n`;
             fs.writeFileSync(resumePath, basicTemplate);
         }
-        
+
         await dialog.showMessageBox(mainWindow, {
             type: 'info',
             title: 'Template Created',
             message: 'New resume created from template!'
         });
-        
+
         if (mainWindow) {
             mainWindow.reload();
         }
@@ -185,13 +185,13 @@ async function importResume() {
         try {
             const resumePath = getResumePath();
             fs.copyFileSync(fileResult.filePaths[0], resumePath);
-            
+
             await dialog.showMessageBox(mainWindow, {
                 type: 'info',
                 title: 'File Imported',
                 message: 'Resume imported successfully!'
             });
-            
+
             if (mainWindow) {
                 setTimeout(() => {
                     mainWindow.reload();
@@ -229,16 +229,8 @@ function createWindow() {
         const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
         console.log('Loading production file from:', indexPath);
         mainWindow.loadFile(indexPath);
-        
-        // Open DevTools in production for debugging
-        mainWindow.webContents.openDevTools();
     }
-    
-    // Log any loading errors
-    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-        console.error('Failed to load:', errorCode, errorDescription);
-    });
-    
+
     mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
         console.log(`Console [${level}]:`, message);
     });
@@ -248,13 +240,13 @@ function createWindow() {
 async function checkResumeFile() {
     const resumePath = getResumePath();
     const templatePath = getResumeTemplatePath();
-    
+
     // Ensure public directory exists
     const publicDir = path.dirname(resumePath);
     if (!fs.existsSync(publicDir)) {
         fs.mkdirSync(publicDir, { recursive: true });
     }
-    
+
     if (!fs.existsSync(resumePath)) {
         const result = await dialog.showMessageBox(mainWindow, {
             type: 'question',
@@ -337,7 +329,7 @@ ipcMain.handle('select-export-directory', async () => {
 ipcMain.handle('open-resume-file', async () => {
     const resumePath = getResumePath();
     const result = await shell.openPath(resumePath);
-    
+
     // If openPath fails, show error dialog
     if (result) {
         dialog.showErrorBox('Error Opening File', `Could not open resume.md: ${result}`);
@@ -370,7 +362,7 @@ ipcMain.handle('read-resume', async () => {
 ipcMain.handle('watch-resume', (event) => {
     const resumePath = getResumePath();
     let watcher = null;
-    
+
     try {
         // Watch for file changes
         watcher = fs.watch(resumePath, (eventType) => {
@@ -379,7 +371,7 @@ ipcMain.handle('watch-resume', (event) => {
                 event.sender.send('resume-updated');
             }
         });
-        
+
         return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
@@ -390,15 +382,15 @@ ipcMain.handle('export-pdf', async () => {
     try {
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
-        
+
         const resumePath = getResumePath();
         let htmlContent = fs.readFileSync(resumePath, 'utf-8');
-        
+
         // Process @VARIABLE syntax
         const lines = htmlContent.split('\n');
         const variables = {};
         let redacted = false;
-        
+
         // Extract variables
         const contentLines = lines.filter(line => {
             if (line.startsWith('@REDACTED=')) {
@@ -416,16 +408,16 @@ ipcMain.handle('export-pdf', async () => {
             }
             return true;
         });
-        
+
         // Replace {VARIABLE} with values
         let processedContent = contentLines.join('\n');
         for (const [key, value] of Object.entries(variables)) {
             processedContent = processedContent.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
         }
-        
+
         // Convert markdown to HTML
         const html = marked.parse(processedContent);
-        
+
         // Complete CSS matching resume.css and settings.css
         const completeCSS = `
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -546,7 +538,7 @@ ipcMain.handle('export-pdf', async () => {
                 margin-left: 8px;
             }
         `;
-        
+
         const fullHtml = `
 <!DOCTYPE html>
 <html>
@@ -559,16 +551,16 @@ ipcMain.handle('export-pdf', async () => {
 </body>
 </html>
 `;
-        
+
         await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-        
+
         // Ask user where to save
         const result = await dialog.showSaveDialog(mainWindow, {
             title: 'Save PDF',
             defaultPath: `Resume-${new Date().toISOString().split('T')[0]}.pdf`,
             filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
         });
-        
+
         if (!result.canceled && result.filePath) {
             await page.pdf({
                 path: result.filePath,
@@ -576,11 +568,11 @@ ipcMain.handle('export-pdf', async () => {
                 margin: { top: '0.4in', right: '0.4in', bottom: '0.4in', left: '0.4in' },
                 printBackground: true
             });
-            
+
             await browser.close();
             return { success: true, path: result.filePath };
         }
-        
+
         await browser.close();
         return { success: false, error: 'Export cancelled' };
     } catch (error) {
@@ -592,7 +584,7 @@ ipcMain.handle('export-pdf', async () => {
 // App lifecycle
 app.whenReady().then(async () => {
     createWindow();
-    
+
     // Check for resume file after window is created
     setTimeout(() => {
         checkResumeFile();
