@@ -13,6 +13,15 @@ function App() {
     const [showDirInput, setShowDirInput] = useState(false)
     const [customDir, setCustomDir] = useState('')
     const [lastSyncTime, setLastSyncTime] = useState(new Date())
+    const [isElectron, setIsElectron] = useState(false)
+
+    useEffect(() => {
+        // Detect if running in Electron
+        const hasElectronAPI = window.electronAPI?.isElectron || false
+        console.log('Electron API detected:', hasElectronAPI)
+        console.log('window.electronAPI:', window.electronAPI)
+        setIsElectron(hasElectronAPI)
+    }, [])
 
     async function loadResume() {
         try {
@@ -92,6 +101,18 @@ function App() {
     }
 
     const handleChangeDir = async () => {
+        // In Electron, use native file dialog
+        if (isElectron && window.electronAPI) {
+            const directory = await window.electronAPI.selectExportDirectory()
+            if (directory) {
+                setCustomDir(directory)
+                setExportPath(directory)
+                setShowDirInput(false)
+            }
+            return
+        }
+
+        // Web version - manual input
         if (!customDir.trim()) {
             alert('Please enter a valid directory path')
             return
@@ -126,18 +147,30 @@ function App() {
     return (
         <div className="app-container">
             <div className="controls no-print">
-                <div className="title">Resume Live Preview & Export</div>
+                <div className="title">
+                    Resume Live Preview & Export
+                    {isElectron && <span className="electron-badge">Desktop App</span>}
+                </div>
                 <div className="button-group">
+                    {isElectron && (
+                        <button 
+                            onClick={() => window.electronAPI.openResumeFile()} 
+                            className="edit-btn"
+                            title="Open resume.md in your default editor"
+                        >
+                            📝 Edit Resume
+                        </button>
+                    )}
                     <button onClick={handleExport} disabled={exporting} className="export-btn">
                         {exporting ? 'Exporting...' : 'Export PDF'}
                     </button>
                     <div className="export-path-container">
                         <span className="export-info">Saves to: {exportPath}</span>
                         <button onClick={() => setShowDirInput(!showDirInput)} className="change-dir-btn">
-                            {showDirInput ? 'Cancel' : 'Change Directory'}
+                            {isElectron ? 'Choose Folder' : showDirInput ? 'Cancel' : 'Change Directory'}
                         </button>
                     </div>
-                    {showDirInput && (
+                    {showDirInput && !isElectron && (
                         <div className="dir-input-container">
                             <input
                                 type="text"
@@ -152,9 +185,12 @@ function App() {
                         </div>
                     )}
                 </div>
-                <button onClick={handlePrint} className="print-btn">
+                <button onClick={handlePrint} className="print-btn" title="Note: Creates PDF as images, text is not selectable">
                     Browser Print
                 </button>
+                <div className="browser-print-warning">
+                    ⚠️ Browser Print creates images only (not ATS-friendly). Use "Export PDF" for text-based PDFs.
+                </div>
                 {exportMessage && <span className="export-message">{exportMessage}</span>}
                 <div className="auto-refresh-indicator">
                     🔄 Auto-refreshes when resume.md changes (Last updated: {lastSyncTime.toLocaleTimeString()})

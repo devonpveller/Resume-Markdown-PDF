@@ -21,6 +21,8 @@ Package the entire system as a standalone desktop app that works on Windows/Mac/
 2. Bundle Node.js runtime and Puppeteer
 3. Include file watcher as background process
 4. Package with electron-builder for .exe/.dmg installers
+5. **Replace personal resume.md with template** - Include `resume-template.md` with example structure/placeholders instead of your personal resume
+6. Add first-run wizard to guide users in creating their resume.md or importing existing file
 
 ### Distribution
 Single installer file (~150MB) uploaded to GitHub Releases or website
@@ -48,6 +50,7 @@ Host the system as a web application where users can:
 3. Use serverless functions for Puppeteer (AWS Lambda with chrome-aws-lambda)
 4. Add authentication (optional)
 5. File upload/storage (S3 or similar)
+6. **No default resume.md** - Users create/upload their own; include "Start with Template" option showing example structure
 
 ### Distribution
 URL to web app (e.g., `resumebuilder.devonveller.com`)
@@ -75,8 +78,15 @@ WORKDIR /app
 COPY export-to-pdf/package*.json ./
 RUN npm ci --only=production
 COPY export-to-pdf/ ./
+# Replace personal resume with template
+COPY resume-template.md ./public/resume.md
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
+```
+
+**Volume mount for user's resume:**
+```bash
+docker run -v /path/to/your/resume.md:/app/public/resume.md -p 3000:3000 resume-system
 ```
 
 ### Distribution
@@ -93,6 +103,8 @@ Make this a template repository that users can clone and customize.
 - Users maintain full control
 - Easy for developers to customize
 - Version control built-in
+5. **Include resume-template.md** - Provide example structure with commented instructions; `.gitignore` should exclude personal resume.md
+6. Setup script prompts: "Create resume from template? (Y/n)"
 - Free hosting on GitHub
 
 ### Implementation
@@ -126,8 +138,13 @@ Publish as an npm package for instant use via npx.
     "resume-system": "./cli.js"
   }
 }
-```
+**CLI should:**
+- Accept `--init` flag to create resume-template.md in current directory
+- Accept `--input resume.md` to specify custom resume file path
+- Never bundle personal resume in npm package
 
+### Distribution
+NPM registry, users run: `npx resume-lol-exporter --init
 ### Distribution
 NPM registry, users run: `npx resume-lol-exporter`
 
@@ -149,6 +166,8 @@ Create a VS Code extension that adds resume preview/export to the editor.
 2. Embed React preview in webview panel
 3. Add command: "Resume: Export to PDF"
 4. Detect `resume.md` files automatically
+5. Add command: "Resume: Create from Template" - generates resume-template.md in workspace
+6. **No bundled resume** - Extension works with user's own resume.md files
 
 ### Distribution
 VS Code Marketplace
@@ -178,6 +197,40 @@ This covers all user types: non-technical (Electron), server operators (Docker),
 
 ---
 
+## Handling User Resume Content
+
+**Critical for all deployment options:**
+
+### Create resume-template.md
+A starter template with:
+- All resume.lol markdown format conventions
+- Example variable declarations (`@NAME=Your Name||Y.N.`)
+- Placeholder sections (Summary, Experience, Education, Skills)
+- Inline comments explaining format: `<!-- Use <span class="spacer"></span> to right-align dates -->`
+- STAR method examples in comments
+
+### Update .gitignore
+```
+# User's personal resume - never commit
+source/resume.md
+export-to-pdf/public/resume.md
+
+# Keep the template
+!resume-template.md
+```
+
+### First-Run Experience
+Packaged applications should:
+1. Check if `resume.md` exists
+2. If not, show welcome screen with options:
+   - "Create from template"
+   - "Import existing resume.md"
+   - "Start blank"
+3. Copy `resume-template.md` → `resume.md` when creating from template
+4. Open file for editing (if desktop app)
+
+---
+
 ## Current Gaps for Distribution
 
 To prepare for any deployment option, you'll need:
@@ -188,6 +241,9 @@ To prepare for any deployment option, you'll need:
 4. **Setup scripts** - Automated dependency installation
 5. **Documentation** - README with installation, usage, troubleshooting
 6. **Licensing** - Add LICENSE file (MIT recommended for open source)
+7. **Create resume-template.md** - Example resume with placeholders and inline documentation
+8. **Update .gitignore** - Exclude personal resume.md, keep template
+9. **Build scripts** - Ensure personal resume is never bundled in production builds
 
 ---
 
