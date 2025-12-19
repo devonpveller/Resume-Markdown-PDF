@@ -25,19 +25,32 @@ function App() {
 
     async function loadResume() {
         try {
-            // Fetch from public directory
-            const response = await fetch('/resume.md')
-            if (!response.ok) throw new Error('Failed to load resume.md')
+            let markdown = '';
+            
+            // Use Electron IPC if available (packaged app)
+            if (window.electronAPI && window.electronAPI.readResume) {
+                const result = await window.electronAPI.readResume();
+                if (result.success) {
+                    markdown = result.content;
+                    setLastSyncTime(new Date());
+                } else {
+                    throw new Error(result.error || 'Failed to read resume');
+                }
+            } else {
+                // Fetch from public directory (web/dev mode)
+                const response = await fetch('/resume.md')
+                if (!response.ok) throw new Error('Failed to load resume.md')
 
-            // Store last modified time for auto-refresh
-            const modified = response.headers.get('Last-Modified')
-            if (lastModified && modified && lastModified !== modified) {
-                console.log('Resume file changed, reloading...')
-                setLastSyncTime(new Date())
+                // Store last modified time for auto-refresh
+                const modified = response.headers.get('Last-Modified')
+                if (lastModified && modified && lastModified !== modified) {
+                    console.log('Resume file changed, reloading...')
+                    setLastSyncTime(new Date())
+                }
+                setLastModified(modified)
+                markdown = await response.text()
             }
-            setLastModified(modified)
 
-            const markdown = await response.text()
             setResumeMarkdown(markdown)
             setLoading(false)
         } catch (err) {
@@ -50,28 +63,43 @@ function App() {
     useEffect(() => {
         loadResume()
 
-        // Fetch the export path from the server
-        fetch('/api/export-path')
-            .then(res => res.json())
-            .then(data => setExportPath(data.path))
-            .catch(() => setExportPath('export-to-pdf folder'))
+        // Set up file watching based on environment
+        if (window.electronAPI && window.electronAPI.onResumeUpdated) {
+            // Electron mode - use IPC file watcher
+            window.electronAPI.watchResume();
+            window.electronAPI.onResumeUpdated(() => {
+                console.log('Resume file changed (Electron watcher)...');
+                loadResume();
+            });
+            
+            // Get export path
+            window.electronAPI.getResumePath()
+                .then(path => setExportPath(path))
+                .catch(() => setExportPath('export-to-pdf folder'));
+        } else {
+            // Web mode - fetch export path from server
+            fetch('/api/export-path')
+                .then(res => res.json())
+                .then(data => setExportPath(data.path))
+                .catch(() => setExportPath('export-to-pdf folder'))
 
-        // Check for file changes every 2 seconds
-        const interval = setInterval(async () => {
-            try {
-                const response = await fetch('/resume.md', { method: 'HEAD' })
-                const currentModified = response.headers.get('Last-Modified')
+            // Check for file changes every 2 seconds
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch('/resume.md', { method: 'HEAD' })
+                    const currentModified = response.headers.get('Last-Modified')
 
-                if (lastModified && currentModified && lastModified !== currentModified) {
-                    console.log('File changed, reloading...')
-                    await loadResume()
+                    if (lastModified && currentModified && lastModified !== currentModified) {
+                        console.log('File changed, reloading...')
+                        await loadResume()
+                    }
+                } catch (err) {
+                    console.error('Error checking for updates:', err)
                 }
-            } catch (err) {
-                console.error('Error checking for updates:', err)
-            }
-        }, 2000)
+            }, 2000)
 
-        return () => clearInterval(interval)
+            return () => clearInterval(interval)
+        }
     }, [lastModified])
 
     const handleExport = async () => {
