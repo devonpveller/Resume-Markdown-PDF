@@ -15,12 +15,39 @@ function App() {
     const [lastSyncTime, setLastSyncTime] = useState(new Date())
     const [isElectron, setIsElectron] = useState(false)
 
+    // Function to load CSS
+    const loadCSS = async () => {
+        if (window.electronAPI?.readCSS) {
+            try {
+                const result = await window.electronAPI.readCSS();
+                if (result.success && result.content) {
+                    const styleId = 'user-resume-css';
+                    let styleEl = document.getElementById(styleId);
+                    if (!styleEl) {
+                        styleEl = document.createElement('style');
+                        styleEl.id = styleId;
+                        document.head.appendChild(styleEl);
+                    }
+                    styleEl.textContent = result.content;
+                    console.log('User CSS loaded and injected');
+                }
+            } catch (err) {
+                console.error('Failed to load user CSS:', err);
+            }
+        }
+    };
+
     useEffect(() => {
         // Detect if running in Electron
         const hasElectronAPI = window.electronAPI?.isElectron || false
         console.log('Electron API detected:', hasElectronAPI)
         console.log('window.electronAPI:', window.electronAPI)
         setIsElectron(hasElectronAPI)
+
+        // Load custom CSS if in Electron
+        if (hasElectronAPI) {
+            loadCSS();
+        }
     }, [])
 
     async function loadResume() {
@@ -33,6 +60,8 @@ function App() {
                 if (result.success) {
                     markdown = result.content;
                     setLastSyncTime(new Date());
+                    // Reload CSS when resume changes (in case CSS was just created)
+                    loadCSS();
                 } else {
                     throw new Error(result.error || 'Failed to read resume');
                 }
@@ -51,7 +80,36 @@ function App() {
                 markdown = await response.text()
             }
 
-            setResumeMarkdown(markdown)
+            // Process @VARIABLE syntax (same as PDF export)
+            const lines = markdown.split('\n');
+            const variables = {};
+            let redacted = false;
+
+            // Extract variables
+            const contentLines = lines.filter(line => {
+                if (line.startsWith('@REDACTED=')) {
+                    redacted = line.includes('true');
+                    return false;
+                }
+                if (line.startsWith('@')) {
+                    const match = line.match(/@(\w+)=(.+)/);
+                    if (match) {
+                        const [, key, values] = match;
+                        const [normal, redactedVal] = values.split('||');
+                        variables[key] = redacted && redactedVal ? redactedVal : normal;
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            // Replace {VARIABLE} with values
+            let processedContent = contentLines.join('\n');
+            for (const [key, value] of Object.entries(variables)) {
+                processedContent = processedContent.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+            }
+
+            setResumeMarkdown(processedContent)
             setLoading(false)
         } catch (err) {
             console.error('Error loading resume:', err)

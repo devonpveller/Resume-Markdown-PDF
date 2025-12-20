@@ -33,11 +33,31 @@ const getSourcePath = () => {
 };
 
 const getResumeTemplatePath = () => {
-    return path.join(getResourcePath(), '..', 'resume-template.md');
+    if (isDev) {
+        return path.join(__dirname, '..', '..', 'resume-template.md');
+    }
+    return path.join(getResourcePath(), 'resume-template.md');
 };
 
 const getResumePath = () => {
     return path.join(getSourcePath(), 'resume.md');
+};
+
+const getResumeCSSPath = () => {
+    return path.join(getSourcePath(), 'resume.css');
+};
+
+const getSettingsCSSPath = () => {
+    return path.join(getSourcePath(), 'settings.css');
+};
+
+const getTemplateCSSPath = (filename) => {
+    // In packaged app, CSS files are in resources root
+    // In dev, they're in source folder
+    if (isDev) {
+        return path.join(__dirname, '..', '..', 'source', filename);
+    }
+    return path.join(getResourcePath(), filename);
 };
 
 // Create application menu
@@ -157,13 +177,28 @@ function createMenu() {
 async function createResumeFromTemplate() {
     const resumePath = getResumePath();
     const templatePath = getResumeTemplatePath();
+    const cssPath = getResumeCSSPath();
+    const settingsPath = getSettingsCSSPath();
 
     try {
+        // Copy resume template
         if (fs.existsSync(templatePath)) {
             fs.copyFileSync(templatePath, resumePath);
         } else {
-            const basicTemplate = `# Your Name\n\n## Professional Summary\n\n[Write your summary here]\n\n## Experience\n\n### Job Title, Company <span class="spacer"></span> Month Year — Present\n\n- [Your accomplishments]\n\n## Skills\n\n**Programming Languages:** Your skills here\n`;
+            const basicTemplate = `# Your Name\n\n## Professional Summary\n\n[Write your summary here]\n\n## Experience\n\n### Job Title, Company <span class="spacer"></span> Month Year \u2014 Present\n\n- [Your accomplishments]\n\n## Skills\n\n**Programming Languages:** Your skills here\n`;
             fs.writeFileSync(resumePath, basicTemplate);
+        }
+
+        // Copy CSS files
+        const templateCSSPath = getTemplateCSSPath('resume.css');
+        const templateSettingsPath = getTemplateCSSPath('settings.css');
+
+        if (fs.existsSync(templateCSSPath)) {
+            fs.copyFileSync(templateCSSPath, cssPath);
+        }
+
+        if (fs.existsSync(templateSettingsPath)) {
+            fs.copyFileSync(templateSettingsPath, settingsPath);
         }
 
         if (mainWindow) {
@@ -186,6 +221,24 @@ async function importResume() {
         try {
             const resumePath = getResumePath();
             fs.copyFileSync(fileResult.filePaths[0], resumePath);
+
+            // Copy default CSS files if they don't exist
+            const cssPath = getResumeCSSPath();
+            const settingsPath = getSettingsCSSPath();
+
+            if (!fs.existsSync(cssPath)) {
+                const templateCSSPath = getTemplateCSSPath('resume.css');
+                if (fs.existsSync(templateCSSPath)) {
+                    fs.copyFileSync(templateCSSPath, cssPath);
+                }
+            }
+
+            if (!fs.existsSync(settingsPath)) {
+                const templateSettingsPath = getTemplateCSSPath('settings.css');
+                if (fs.existsSync(templateSettingsPath)) {
+                    fs.copyFileSync(templateSettingsPath, settingsPath);
+                }
+            }
 
             if (mainWindow) {
                 setTimeout(() => {
@@ -384,6 +437,25 @@ ipcMain.handle('read-resume', async () => {
     }
 });
 
+ipcMain.handle('read-css', async () => {
+    const cssPath = getResumeCSSPath();
+    const settingsPath = getSettingsCSSPath();
+
+    try {
+        let css = '';
+        if (fs.existsSync(cssPath)) {
+            css += fs.readFileSync(cssPath, 'utf-8');
+        }
+        if (fs.existsSync(settingsPath)) {
+            css += '\n' + fs.readFileSync(settingsPath, 'utf-8');
+        }
+        return { success: true, content: css };
+    } catch (error) {
+        console.error('IPC: Error reading CSS:', error);
+        return { success: false, error: error.message };
+    }
+});
+
 ipcMain.handle('watch-resume', (event) => {
     const resumePath = getResumePath();
     let watcher = null;
@@ -409,7 +481,28 @@ ipcMain.handle('export-pdf', async () => {
         const page = await browser.newPage();
 
         const resumePath = getResumePath();
+        const cssPath = getResumeCSSPath();
+        const settingsPath = getSettingsCSSPath();
+
         let htmlContent = fs.readFileSync(resumePath, 'utf-8');
+
+        // Read user's CSS files
+        let userCSS = '';
+        if (fs.existsSync(cssPath)) {
+            userCSS += fs.readFileSync(cssPath, 'utf-8');
+        }
+        if (fs.existsSync(settingsPath)) {
+            userCSS += '\n' + fs.readFileSync(settingsPath, 'utf-8');
+        }
+
+        // Fallback to default CSS if user files don't exist
+        if (!userCSS) {
+            userCSS = `
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                body { font-family: Inter, system-ui, sans-serif; font-size: 14px; }
+                h1, h2, h3, p, a, li { color: black; }
+            `;
+        }
 
         // Process @VARIABLE syntax
         const lines = htmlContent.split('\n');
@@ -443,133 +536,12 @@ ipcMain.handle('export-pdf', async () => {
         // Convert markdown to HTML
         const html = marked.parse(processedContent);
 
-        // Complete CSS matching resume.css and settings.css
-        const completeCSS = `
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-            
-            body {
-                font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-                font-size: 14px;
-                font-weight: 400;
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-            
-            .spacer {
-                margin: 0px auto;
-            }
-            
-            .newline {
-                padding-bottom: 6px;
-            }
-            
-            hr.pagebreak {
-                page-break-after: always;
-                visibility: hidden;
-                margin: 0;
-                padding: 0;
-                height: 0;
-                border: none;
-            }
-            
-            div[style*="page-break-before"] {
-                padding-top: 40px;
-            }
-            
-            h1 {
-                order: 0;
-            }
-            
-            .headerInfo {
-                order: 1;
-            }
-            
-            h1, h2, h3, p, a, li {
-                color: black;
-            }
-            
-            h2 {
-                margin: 10px 0px;
-            }
-            
-            h3 {
-                margin: 6px 0px;
-            }
-            
-            h1 {
-                color: black;
-                text-transform: uppercase;
-                text-align: center;
-                font-size: 24px;
-                margin: 0;
-                padding: 0;
-            }
-            
-            h2 {
-                border-bottom: 1px solid #000000;
-                text-transform: uppercase;
-                font-size: 16px;
-                padding: 0;
-            }
-            
-            h3 {
-                display: flex;
-                font-size: 15px;
-                padding: 0;
-                justify-content: space-between;
-                page-break-inside: avoid;
-                page-break-after: avoid;
-            }
-            
-            p {
-                margin: 0;
-                padding: 0;
-            }
-            
-            a {
-                color: black;
-            }
-            
-            ul {
-                margin: 4px 0;
-                padding-left: 24px;
-                padding-right: 24px;
-            }
-            
-            .headerInfo > ul {
-                display: flex;
-                text-align: center;
-                justify-content: center;
-                margin: 0px auto !important;
-                padding: 0;
-            }
-            
-            .headerInfo > ul:first-of-type {
-                margin-top: 6px !important;
-            }
-            
-            .headerInfo > ul > li {
-                display: inline;
-                white-space: pre;
-                list-style-type: none;
-            }
-            
-            .headerInfo > ul > li:not(:last-child) {
-                margin-right: 8px;
-            }
-            
-            .headerInfo > ul > li:not(:last-child):after {
-                content: "•";
-                margin-left: 8px;
-            }
-        `;
-
         const fullHtml = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>${completeCSS}</style>
+    <style>${userCSS}</style>
 </head>
 <body>
     ${html}

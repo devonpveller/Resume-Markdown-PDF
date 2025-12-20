@@ -1,11 +1,13 @@
-/* Import resume styles */
+/* Import resume styles - only works in dev mode */
+/* In Electron production, CSS is injected via IPC */
 @import url('../public/resume.css');
 @import url('../public/settings.css');
 
 .app-container {
     max-width: 8.5in;
     margin: 0 auto;
-    background: #f0f0f0;
+    background: white;
+    /* Changed from #f0f0f0 to match PDF */
     padding: 20px;
 }
 

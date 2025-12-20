@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openResumeFile: () => ipcRenderer.invoke('open-resume-file'),
     getResumePath: () => ipcRenderer.invoke('get-resume-path'),
     readResume: () => ipcRenderer.invoke('read-resume'),
+    readCSS: () => ipcRenderer.invoke('read-css'),
     watchResume: () => ipcRenderer.invoke('watch-resume'),
     onResumeUpdated: (callback) => ipcRenderer.on('resume-updated', callback),
     exportPDF: () => ipcRenderer.invoke('export-pdf'),

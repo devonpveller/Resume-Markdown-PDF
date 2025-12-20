@@ -34,11 +34,7 @@ Replace all placeholder content with your own information
 
 ## Professional Summary
 
-<!-- Write a compelling 2-3 sentence summary highlighting your unique value proposition -->
-<!-- Focus on: years of experience, key expertise areas, and quantifiable achievements -->
-<!-- Example: "Multidisciplinary developer with 10+ years creating interactive applications..." -->
-
-[Write your professional summary here - emphasize your unique blend of skills and what makes you stand out]
+Innovative software engineer with 7+ years architecting scalable cloud-native applications and leading cross-functional teams to deliver high-impact solutions for Fortune 500 clients. Specialized in microservices architecture, distributed systems, and modern web technologies—driving 60% performance improvements and $2M+ in business value through strategic technical leadership and data-driven optimization.
 
 ---
 
@@ -49,55 +45,69 @@ Replace all placeholder content with your own information
 <!-- ALWAYS include quantifiable metrics (numbers, percentages, time savings) -->
 
 <!-- Use <span class="spacer"></span> to right-align dates -->
-### Your Job Title, Company Name <span class="spacer"></span> Month Year &mdash; Present
+### Senior Software Engineer, Tech Company Inc. <span class="spacer"></span> Jan 2020 &mdash; Present
 
-<!-- Example bullet following STAR:
-- Engineered multiplayer AR training system (Task) supporting 20 concurrent users with <50ms latency (Result), implementing custom Unity NetCode optimization and spatial anchoring algorithms (Action)
--->
+*Platform Engineering Team*
+<div class="newline"></div>
 
-- [Action Verb] [specific accomplishment] as measured by [quantifiable result], by [technical approach/methods used]
-- [Action Verb] [what you built/improved] resulting in [X% improvement/Y users/Z performance gain] through [technology/methodology]
-- [Action Verb] [system/feature] that [impact on users/business] using [technologies: Tool1, Tool2, Framework]
+Led development of cloud-native microservices architecture serving 500K+ daily active users, reducing system latency by 60% through strategic implementation of distributed caching and database optimization while managing cross-functional team of 5 engineers.
 
-**Technologies:** Technology1, Technology2, Framework, Language
+- Architected event-driven microservices platform processing 10M+ events/day using Kafka and Redis, achieving 99.9% uptime and reducing API response time from 450ms to 180ms through optimized data pipelines and caching strategies.
+- Engineered automated CI/CD pipeline using GitHub Actions and Kubernetes reducing deployment time by 75% (from 4 hours to 1 hour) and eliminating 95% of production incidents through comprehensive integration testing and canary deployments.
+- Implemented real-time analytics dashboard serving 200+ internal stakeholders using React and WebSocket connections, enabling data-driven decision making that increased feature adoption by 40% in first quarter.
+- Led migration of monolithic Rails application to containerized microservices architecture, completing 8-month initiative under budget while maintaining zero downtime and training team of 5 on new technologies.
+- Mentored 3 junior engineers through code reviews and pair programming sessions, improving team code quality scores by 35% and reducing bug rate by 50% over 6-month period.
 
-### Previous Job Title, Company Name <span class="spacer"></span> Month Year &mdash; Month Year
+<div class="newline"></div>
+Technologies: Python, Django, React, Kubernetes, Docker, PostgreSQL, Redis, Kafka, AWS (EC2, S3, Lambda)
+<div class="newline"></div>
 
-- [Use strong action verbs: Developed, Engineered, Implemented, Designed, Optimized, Built, Created, Led]
-- [Always quantify: "Reduced load time by 60%", "Supported 500+ users", "Processed 10K records/sec"]
-- [Show technical depth: mention specific frameworks, languages, architectures]
+### Software Engineer, Digital Solutions LLC <span class="spacer"></span> Mar 2018 &mdash; Dec 2019
 
-**Technologies:** List, Relevant, Technologies
+*Full-Stack Development Team*
+<div class="newline"></div>
 
-### Earlier Position, Company <span class="spacer"></span> Month Year &mdash; Month Year
+Developed customer-facing web applications for Fortune 500 clients, delivering 15+ projects on time and under budget while implementing modern JavaScript frameworks and RESTful APIs that improved user engagement by 45%.
 
-- [Focus on achievements, not duties]
-- [Each bullet should demonstrate value delivered]
-- [Include context: team size, project scope, constraints overcome]
+- Built e-commerce platform handling $2M+ in annual transactions using Node.js and React, implementing secure payment processing with Stripe API and reducing cart abandonment rate by 28% through UX optimization.
+- Designed and implemented RESTful API serving 50K+ monthly requests with comprehensive documentation using Swagger, enabling third-party integrations that generated $500K in additional revenue.
+- Optimized SQL database queries reducing page load times by 55% (from 3.2s to 1.4s) through indexing strategies and query refactoring, improving SEO rankings and user retention by 20%.
+- Collaborated with design team to implement responsive mobile-first interface achieving 98% cross-browser compatibility and increasing mobile traffic by 65% within 3 months of launch.
 
-**Technologies:** Tech, Stack, Here
+<div class="newline"></div>
+Technologies: JavaScript, Node.js, React, Express.js, MongoDB, MySQL, Git, Heroku
+<div class="newline"></div>
+
+### Junior Developer, StartupCo <span class="spacer"></span> Jun 2016 &mdash; Feb 2018
+
+- Developed 20+ responsive landing pages using HTML5, CSS3, and JavaScript resulting in 30% increase in lead generation and 25% improvement in conversion rates through A/B testing optimization.
+- Implemented automated testing suite using Jest and Selenium reducing QA time by 40% and catching 85% of bugs before production deployment.
+- Contributed to open-source projects including popular React component library with 5K+ GitHub stars, improving documentation and fixing critical accessibility issues.
 
 ---
 
 ## Education
 
-### Degree Name, Institution Name <span class="spacer"></span> Graduation Year
+### Bachelor of Science in Computer Science, University Name <span class="spacer"></span> 2016
 
-- **Relevant coursework:** Course1, Course2, Course3
-- **Honors/Activities:** Dean's List, Clubs, Projects
+- **GPA:** 3.8/4.0, Dean's List (6 semesters)
+- **Relevant Coursework:** Data Structures, Algorithms, Database Systems, Software Engineering, Web Development
+- **Senior Project:** Developed real-time collaborative code editor using WebSockets and Node.js, recognized as Best Technical Project
 
 ---
 
 ## Skills
+**Programming Languages:** Python (Expert), JavaScript/TypeScript (Expert), Java (Intermediate), Go (Basic)
 
-<!-- Group skills by category for easy scanning -->
+**Frontend:** React, Vue.js, Next.js, HTML5, CSS3, Tailwind CSS, Redux, Webpack
 
-**Programming Languages:** Language1 (Expert), Language2 (Intermediate), Language3 (Basic)
+**Backend:** Node.js, Express.js, Django, Flask, FastAPI, GraphQL, RESTful APIs
 
-**Frameworks & Tools:** Framework1, Framework2, Tool1, Tool2, Tool3
+**Databases:** PostgreSQL, MongoDB, Redis, MySQL, Elasticsearch
 
-**Technical Skills:** Skill1, Skill2, Skill3, Skill4
+**DevOps & Cloud:** Docker, Kubernetes, AWS (EC2, S3, Lambda, RDS), CI/CD, GitHub Actions, Jenkins
 
+**Tools & Practices:** Git, Agile/Scrum, Test-Driven Development, Microservices, System Design
 **Domain Expertise:** Area1, Area2, Area3
 
 ---

@@ -18,6 +18,14 @@
         {
             "from": "../resume-template.md",
             "to": "resume-template.md"
+        },
+        {
+            "from": "../source/resume.css",
+            "to": "resume.css"
+        },
+        {
+            "from": "../source/settings.css",
+            "to": "settings.css"
         }
     ],
     "win": {

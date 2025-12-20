@@ -36,12 +36,19 @@ div[style*="page-break-before"] {
 }
 
 /* ordering of content */
+.section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 h1 {
     order: 0;
 }
 
 .headerInfo {
     order: 1;
+    width: 100%;
 }
 
 /* styling content */
@@ -102,12 +109,15 @@ ul {
     padding-right: 24px;
 }
 
-o>ul {
+.headerInfo>ul {
     display: flex;
+    flex-direction: row;
+    align-items: center;
     text-align: center;
     justify-content: center;
     margin: 0px auto !important;
     padding: 0;
+    width: 100%;
 }
 
 .headerInfo>ul:first-of-type {
