@@ -10,6 +10,7 @@ This guide provides comprehensive implementation instructions for adding a **Bul
 - **Job Post Integration**: Link job postings as markdown files for AI-powered relevance rephrasing
 - **Duplicate Detection**: Validate bullets against existing library to prevent duplicates
 - **Header Library**: Store and reuse section headers across resumes
+- **Test-Driven Development**: All implementations MUST be proven via TDD with evidence of passing tests
 
 ---
 
@@ -25,7 +26,12 @@ This guide provides comprehensive implementation instructions for adding a **Bul
    - [Design Patterns Required](#design-patterns-required)
    - [Encapsulation Strategies](#encapsulation-strategies)
    - [Code Quality Standards](#code-quality-standards)
-7. [Implementation Steps](#implementation-steps)
+7. [TDD Methodology](#tdd-methodology)
+   - [Red-Green-Refactor Cycle](#red-green-refactor-cycle)
+   - [Test File Structure](#test-file-structure)
+   - [Evidence Requirements](#evidence-requirements)
+   - [Test Specifications by Module](#test-specifications-by-module)
+8. [Implementation Steps](#implementation-steps)
    - [Step 1: Storage Path Manager](#step-1-storage-path-manager)
    - [Step 2: Bullet Library Data Store](#step-2-bullet-library-data-store)
    - [Step 3: Header Library Manager](#step-3-header-library-manager)
@@ -36,8 +42,8 @@ This guide provides comprehensive implementation instructions for adding a **Bul
    - [Step 8: React Components](#step-8-react-components)
    - [Step 9: Bullet Library Panel UI](#step-9-bullet-library-panel-ui-with-variant-management)
    - [Step 10: Local AI Integration](#step-10-local-ai-integration-with-job-context)
-8. [Testing Checklist](#testing-checklist)
-9. [File Reference](#file-reference)
+9. [Testing Checklist](#testing-checklist)
+10. [File Reference](#file-reference)
 
 ---
 
@@ -871,6 +877,897 @@ src/
 └── services/                   # Frontend utilities (no Node.js)
     └── bulletParser.js
 ```
+
+---
+
+## TDD Methodology
+
+### CRITICAL REQUIREMENT
+
+**All implementations MUST follow Test-Driven Development (TDD).** The implementing agent MUST:
+
+1. Write tests BEFORE implementation code
+2. Run tests to verify they FAIL (Red phase)
+3. Implement the minimum code to pass tests (Green phase)
+4. Refactor while keeping tests green (Refactor phase)
+5. Capture and report test output as evidence of successful implementation
+
+**No implementation is considered complete without passing test evidence.**
+
+---
+
+### Red-Green-Refactor Cycle
+
+For EACH module/function, the agent MUST follow this cycle:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 1: RED (Write Failing Test)                                      │
+│  ─────────────────────────────────                                      │
+│  1. Write test file with test cases for the feature                     │
+│  2. Run: npm test -- --grep "ModuleName"                                │
+│  3. Verify tests FAIL (expected - no implementation yet)                │
+│  4. CAPTURE OUTPUT: "✗ should add bullet to library" etc.              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 2: GREEN (Implement Minimum Code)                                │
+│  ───────────────────────────────────────                                │
+│  1. Write the implementation code                                       │
+│  2. Run: npm test -- --grep "ModuleName"                                │
+│  3. Verify ALL tests PASS                                               │
+│  4. CAPTURE OUTPUT: "✓ should add bullet to library" etc.              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 3: REFACTOR (Improve While Green)                                │
+│  ───────────────────────────────────────                                │
+│  1. Refactor implementation (encapsulation, SOLID, patterns)            │
+│  2. Run: npm test -- --grep "ModuleName"                                │
+│  3. Verify tests STILL pass after refactoring                           │
+│  4. CAPTURE OUTPUT: Full test summary                                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PHASE 4: DOCUMENT (Evidence of Success)                                │
+│  ───────────────────────────────────────                                │
+│  1. Record final test output in implementation notes                    │
+│  2. Include: test count, pass/fail status, coverage (if available)     │
+│  3. Move to next module only after ALL tests pass                       │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Test File Structure
+
+```
+export-to-pdf/
+├── electron/
+│   ├── managers/
+│   │   └── __tests__/                          # Manager unit tests
+│   │       ├── bullet-library-manager.test.cjs
+│   │       ├── header-library-manager.test.cjs
+│   │       └── job-post-manager.test.cjs
+│   │
+│   └── services/
+│       └── __tests__/                          # Service unit tests
+│           ├── storage-paths.test.cjs
+│           └── validation.test.cjs
+│
+├── src/
+│   ├── hooks/
+│   │   └── __tests__/
+│   │       └── useBulletLibrary.test.js
+│   │
+│   ├── services/
+│   │   └── __tests__/
+│   │       └── bulletParser.test.js
+│   │
+│   └── components/
+│       └── __tests__/
+│           └── BulletLibraryPanel.test.jsx
+│
+├── jest.config.cjs                             # Jest configuration
+├── jest.setup.cjs                              # Test setup/mocks
+└── package.json                                # Test scripts
+```
+
+### package.json Test Configuration
+
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:managers": "jest --testPathPattern=managers",
+    "test:services": "jest --testPathPattern=services",
+    "test:components": "jest --testPathPattern=components"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "mock-fs": "^5.2.0"
+  }
+}
+```
+
+### jest.config.cjs
+
+```javascript
+module.exports = {
+    testEnvironment: 'node',
+    roots: ['<rootDir>/electron', '<rootDir>/src'],
+    testMatch: ['**/__tests__/**/*.test.{js,cjs,jsx}'],
+    moduleFileExtensions: ['js', 'cjs', 'jsx', 'json'],
+    collectCoverageFrom: [
+        'electron/managers/**/*.cjs',
+        'electron/services/**/*.cjs',
+        'src/services/**/*.js',
+        'src/hooks/**/*.js',
+        '!**/__tests__/**'
+    ],
+    coverageThreshold: {
+        global: {
+            branches: 80,
+            functions: 80,
+            lines: 80,
+            statements: 80
+        }
+    },
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
+    verbose: true
+};
+```
+
+---
+
+### Evidence Requirements
+
+**For EACH implementation step, the agent MUST provide:**
+
+1. **Test file creation** - Show the complete test file content
+2. **Red phase output** - Terminal output showing tests fail before implementation
+3. **Implementation code** - The actual module code
+4. **Green phase output** - Terminal output showing ALL tests pass
+5. **Final summary** - Test count and coverage metrics
+
+#### Evidence Format Template
+
+After implementing each module, document evidence in this format:
+
+```markdown
+## Evidence: [Module Name] Implementation
+
+### Test File Created
+`electron/managers/__tests__/bullet-library-manager.test.cjs`
+
+### Red Phase (Tests Fail - Expected)
+```
+$ npm test -- --grep "BulletLibraryManager"
+
+ FAIL  electron/managers/__tests__/bullet-library-manager.test.cjs
+  BulletLibraryManager
+    ✗ should create empty library on first load (5ms)
+    ✗ should add bullet with generated ID (3ms)
+    ✗ should detect duplicate bullets (2ms)
+    ✗ should return immutable copies (4ms)
+
+Tests: 4 failed, 4 total
+```
+
+### Green Phase (Tests Pass)
+```
+$ npm test -- --grep "BulletLibraryManager"
+
+ PASS  electron/managers/__tests__/bullet-library-manager.test.cjs
+  BulletLibraryManager
+    ✓ should create empty library on first load (8ms)
+    ✓ should add bullet with generated ID (4ms)
+    ✓ should detect duplicate bullets (3ms)
+    ✓ should return immutable copies (2ms)
+
+Tests: 4 passed, 4 total
+Time: 0.892s
+```
+
+### Coverage (Optional but Recommended)
+```
+-----------------------------|---------|----------|---------|---------|
+File                         | % Stmts | % Branch | % Funcs | % Lines |
+-----------------------------|---------|----------|---------|---------|
+bullet-library-manager.cjs   |   94.2  |    88.5  |   100   |   94.2  |
+-----------------------------|---------|----------|---------|---------|
+```
+```
+
+---
+
+### Test Specifications by Module
+
+#### 1. StoragePaths Tests (`storage-paths.test.cjs`)
+
+```javascript
+const { getStoragePaths, StoragePaths } = require('../storage-paths.cjs');
+const path = require('path');
+const fs = require('fs');
+const mockFs = require('mock-fs');
+
+describe('StoragePaths', () => {
+    beforeEach(() => {
+        // Mock file system
+        mockFs({
+            '/mock/userData': {}
+        });
+    });
+
+    afterEach(() => {
+        mockFs.restore();
+    });
+
+    describe('Singleton Pattern', () => {
+        it('should return same instance on multiple calls', () => {
+            const instance1 = getStoragePaths();
+            const instance2 = getStoragePaths();
+            expect(instance1).toBe(instance2);
+        });
+    });
+
+    describe('Path Resolution', () => {
+        it('should return correct bullets.json path', () => {
+            const paths = new StoragePaths('/mock/userData');
+            expect(paths.getBulletsFilePath()).toContain('bullet-library');
+            expect(paths.getBulletsFilePath()).toContain('bullets.json');
+        });
+
+        it('should return correct headers.json path', () => {
+            const paths = new StoragePaths('/mock/userData');
+            expect(paths.getHeadersFilePath()).toContain('headers.json');
+        });
+
+        it('should return correct job-posts directory path', () => {
+            const paths = new StoragePaths('/mock/userData');
+            expect(paths.getJobPostsPath()).toContain('job-posts');
+        });
+
+        it('should create directories if they do not exist', () => {
+            const paths = new StoragePaths('/mock/userData');
+            paths.ensureDirectories();
+            expect(fs.existsSync(paths.getBulletLibraryPath())).toBe(true);
+            expect(fs.existsSync(paths.getJobPostsPath())).toBe(true);
+        });
+    });
+});
+```
+
+**Required test count: 5 tests minimum**
+
+---
+
+#### 2. BulletLibraryManager Tests (`bullet-library-manager.test.cjs`)
+
+```javascript
+const BulletLibraryManager = require('../bullet-library-manager.cjs');
+const mockFs = require('mock-fs');
+
+describe('BulletLibraryManager', () => {
+    let manager;
+    let mockPaths;
+
+    beforeEach(() => {
+        mockFs({
+            '/mock/bullet-library': {}
+        });
+        
+        mockPaths = {
+            getBulletsFilePath: () => '/mock/bullet-library/bullets.json',
+            getValidationHashesPath: () => '/mock/bullet-library/validation-hashes.json',
+            ensureDirectories: jest.fn()
+        };
+        
+        manager = new BulletLibraryManager(mockPaths);
+    });
+
+    afterEach(() => {
+        mockFs.restore();
+    });
+
+    describe('Constructor', () => {
+        it('should throw TypeError if storagePaths not provided', () => {
+            expect(() => new BulletLibraryManager()).toThrow(TypeError);
+        });
+
+        it('should accept injected storagePaths', () => {
+            expect(() => new BulletLibraryManager(mockPaths)).not.toThrow();
+        });
+    });
+
+    describe('load()', () => {
+        it('should create empty library on first load', () => {
+            const library = manager.load();
+            expect(library.version).toBe('1.0.0');
+            expect(library.bullets).toEqual([]);
+            expect(library.totalBullets).toBe(0);
+        });
+
+        it('should return immutable copy of library', () => {
+            const library1 = manager.load();
+            const library2 = manager.load();
+            library1.bullets.push({ id: 'test' });
+            expect(library2.bullets.length).toBe(0);
+        });
+    });
+
+    describe('addBullet()', () => {
+        it('should add bullet with generated ID', () => {
+            const result = manager.addBullet({
+                text: 'Engineered a high-performance system achieving 5x throughput',
+                parentHeader: { headerText: 'Experience', headerLevel: 2 }
+            });
+            
+            expect(result.duplicate).toBe(false);
+            expect(result.bullet.id).toBeDefined();
+            expect(result.bullet.text).toContain('Engineered');
+        });
+
+        it('should throw TypeError for missing text', () => {
+            expect(() => manager.addBullet({})).toThrow(TypeError);
+        });
+
+        it('should throw Error for text under 10 characters', () => {
+            expect(() => manager.addBullet({ text: 'Short' })).toThrow();
+        });
+
+        it('should detect exact duplicate bullets', () => {
+            const text = 'Led development of microservices architecture';
+            manager.addBullet({ text });
+            const result = manager.addBullet({ text });
+            
+            expect(result.duplicate).toBe(true);
+        });
+
+        it('should increment usageCount for duplicates', () => {
+            const text = 'Implemented CI/CD pipeline reducing deploy time by 50%';
+            manager.addBullet({ text });
+            const result = manager.addBullet({ text });
+            
+            expect(result.bullet.usageCount).toBe(2);
+        });
+    });
+
+    describe('getBullet()', () => {
+        it('should return bullet by ID', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Architected scalable data pipeline processing 1M events/day' 
+            });
+            const retrieved = manager.getBullet(bullet.id);
+            
+            expect(retrieved.text).toBe(bullet.text);
+        });
+
+        it('should return null for non-existent ID', () => {
+            expect(manager.getBullet('nonexistent-id')).toBeNull();
+        });
+
+        it('should return immutable copy', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Designed machine learning pipeline improving accuracy by 30%' 
+            });
+            const retrieved = manager.getBullet(bullet.id);
+            retrieved.text = 'Modified';
+            
+            const retrieved2 = manager.getBullet(bullet.id);
+            expect(retrieved2.text).not.toBe('Modified');
+        });
+    });
+
+    describe('addPendingVariant()', () => {
+        it('should add variant to existing bullet', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Developed REST API serving 10K requests per second' 
+            });
+            
+            const result = manager.addPendingVariant(
+                bullet.id,
+                'Built high-throughput REST API handling 10K+ rps',
+                'ai-rephrase',
+                'gpt-4',
+                'job-post-123'
+            );
+            
+            expect(result.duplicate).toBe(false);
+            expect(result.variant.accepted).toBe(false);
+            expect(result.variant.source).toBe('ai-rephrase');
+        });
+
+        it('should detect duplicate variants', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Created automated testing framework with 95% coverage' 
+            });
+            const variantText = 'Built comprehensive test suite achieving 95% code coverage';
+            
+            manager.addPendingVariant(bullet.id, variantText, 'ai-rephrase');
+            const result = manager.addPendingVariant(bullet.id, variantText, 'ai-rephrase');
+            
+            expect(result.duplicate).toBe(true);
+        });
+    });
+
+    describe('acceptVariant()', () => {
+        it('should mark variant as accepted', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Optimized database queries reducing latency by 60%' 
+            });
+            const { variant } = manager.addPendingVariant(
+                bullet.id,
+                'Enhanced database performance with 60% latency reduction',
+                'ai-rephrase'
+            );
+            
+            const accepted = manager.acceptVariant(bullet.id, variant.id);
+            
+            expect(accepted.accepted).toBe(true);
+            expect(accepted.acceptedAt).toBeDefined();
+        });
+
+        it('should register accepted variant hash for duplicate detection', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Mentored team of 5 junior developers' 
+            });
+            const variantText = 'Coached and developed 5 junior team members';
+            const { variant } = manager.addPendingVariant(bullet.id, variantText, 'manual');
+            
+            manager.acceptVariant(bullet.id, variant.id);
+            
+            // Now adding same text should be detected as duplicate
+            const isDupe = manager.isDuplicate(variantText);
+            expect(isDupe).toBeTruthy();
+        });
+    });
+
+    describe('deleteBullet()', () => {
+        it('should remove bullet from library', () => {
+            const { bullet } = manager.addBullet({ 
+                text: 'Reduced infrastructure costs by 40% through optimization' 
+            });
+            
+            manager.deleteBullet(bullet.id);
+            
+            expect(manager.getBullet(bullet.id)).toBeNull();
+        });
+
+        it('should throw Error for non-existent bullet', () => {
+            expect(() => manager.deleteBullet('fake-id')).toThrow();
+        });
+    });
+});
+```
+
+**Required test count: 18 tests minimum**
+
+---
+
+#### 3. Validation Tests (`validation.test.cjs`)
+
+```javascript
+const Validation = require('../validation.cjs');
+
+describe('Validation', () => {
+    describe('generateHash()', () => {
+        it('should generate consistent hash for same text', () => {
+            const hash1 = Validation.generateHash('Test bullet text');
+            const hash2 = Validation.generateHash('Test bullet text');
+            expect(hash1).toBe(hash2);
+        });
+
+        it('should normalize whitespace before hashing', () => {
+            const hash1 = Validation.generateHash('Test  bullet   text');
+            const hash2 = Validation.generateHash('Test bullet text');
+            expect(hash1).toBe(hash2);
+        });
+
+        it('should be case-insensitive', () => {
+            const hash1 = Validation.generateHash('TEST BULLET TEXT');
+            const hash2 = Validation.generateHash('test bullet text');
+            expect(hash1).toBe(hash2);
+        });
+
+        it('should throw TypeError for non-string input', () => {
+            expect(() => Validation.generateHash(null)).toThrow(TypeError);
+            expect(() => Validation.generateHash(123)).toThrow(TypeError);
+        });
+    });
+
+    describe('levenshteinDistance()', () => {
+        it('should return 0 for identical strings', () => {
+            expect(Validation.levenshteinDistance('hello', 'hello')).toBe(0);
+        });
+
+        it('should return correct distance for single edit', () => {
+            expect(Validation.levenshteinDistance('hello', 'hallo')).toBe(1);
+        });
+
+        it('should handle empty strings', () => {
+            expect(Validation.levenshteinDistance('', 'test')).toBe(4);
+            expect(Validation.levenshteinDistance('test', '')).toBe(4);
+        });
+    });
+
+    describe('calculateSimilarity()', () => {
+        it('should return 1.0 for identical strings', () => {
+            expect(Validation.calculateSimilarity('same', 'same')).toBe(1.0);
+        });
+
+        it('should return value between 0 and 1', () => {
+            const similarity = Validation.calculateSimilarity('hello', 'world');
+            expect(similarity).toBeGreaterThanOrEqual(0);
+            expect(similarity).toBeLessThanOrEqual(1);
+        });
+
+        it('should detect similar bullets above threshold', () => {
+            const bullet1 = 'Engineered data pipeline processing 1M events daily';
+            const bullet2 = 'Engineered data pipeline processing 1M events per day';
+            const similarity = Validation.calculateSimilarity(bullet1, bullet2);
+            expect(similarity).toBeGreaterThan(0.85);
+        });
+    });
+
+    describe('validateBullet()', () => {
+        it('should pass for well-formed STAR bullet', () => {
+            const result = Validation.validateBullet(
+                'Engineered CI/CD pipeline reducing deployment time by 50%'
+            );
+            expect(result.valid).toBe(true);
+            expect(result.hasMetric).toBe(true);
+            expect(result.hasVerb).toBe(true);
+        });
+
+        it('should flag bullet without metrics', () => {
+            const result = Validation.validateBullet(
+                'Worked on various projects for the team'
+            );
+            expect(result.hasMetric).toBe(false);
+            expect(result.suggestions).toContain(expect.stringContaining('metrics'));
+        });
+
+        it('should flag bullet without strong verb', () => {
+            const result = Validation.validateBullet(
+                'Was responsible for the deployment pipeline'
+            );
+            expect(result.hasVerb).toBe(false);
+        });
+    });
+});
+```
+
+**Required test count: 12 tests minimum**
+
+---
+
+#### 4. HeaderLibraryManager Tests (`header-library-manager.test.cjs`)
+
+```javascript
+const HeaderLibraryManager = require('../header-library-manager.cjs');
+const mockFs = require('mock-fs');
+
+describe('HeaderLibraryManager', () => {
+    let manager;
+    let mockPaths;
+
+    beforeEach(() => {
+        mockFs({ '/mock/bullet-library': {} });
+        mockPaths = {
+            getHeadersFilePath: () => '/mock/bullet-library/headers.json'
+        };
+        manager = new HeaderLibraryManager(mockPaths);
+    });
+
+    afterEach(() => {
+        mockFs.restore();
+    });
+
+    describe('Constructor', () => {
+        it('should throw TypeError if storagePaths not provided', () => {
+            expect(() => new HeaderLibraryManager()).toThrow(TypeError);
+        });
+    });
+
+    describe('addHeader()', () => {
+        it('should add h2 header', () => {
+            const result = manager.addHeader({ level: 2, text: 'Experience' });
+            expect(result.duplicate).toBe(false);
+            expect(result.header.level).toBe(2);
+            expect(result.header.id).toBeDefined();
+        });
+
+        it('should add h3 header with parent reference', () => {
+            const h2 = manager.addHeader({ level: 2, text: 'Experience' });
+            const result = manager.addHeader({
+                level: 3,
+                text: 'Senior Developer, Company',
+                parentHeaderId: h2.header.id,
+                dateRange: 'Jan 2020 — Present'
+            });
+            expect(result.header.parentHeaderId).toBe(h2.header.id);
+            expect(result.header.dateRange).toBe('Jan 2020 — Present');
+        });
+
+        it('should detect duplicate headers', () => {
+            manager.addHeader({ level: 2, text: 'Skills' });
+            const result = manager.addHeader({ level: 2, text: 'Skills' });
+            expect(result.duplicate).toBe(true);
+            expect(result.header.usageCount).toBe(2);
+        });
+    });
+
+    describe('getSubHeaders()', () => {
+        it('should return h3 headers under h2 parent', () => {
+            const h2 = manager.addHeader({ level: 2, text: 'Experience' });
+            manager.addHeader({ level: 3, text: 'Job 1', parentHeaderId: h2.header.id });
+            manager.addHeader({ level: 3, text: 'Job 2', parentHeaderId: h2.header.id });
+            
+            const subHeaders = manager.getSubHeaders(h2.header.id);
+            expect(subHeaders.length).toBe(2);
+        });
+    });
+
+    describe('generateMarkdown()', () => {
+        it('should generate correct h2 markdown', () => {
+            const { header } = manager.addHeader({ level: 2, text: 'Experience' });
+            const md = manager.generateMarkdown(header.id);
+            expect(md).toBe('## Experience');
+        });
+
+        it('should include date range with spacer', () => {
+            const { header } = manager.addHeader({
+                level: 3,
+                text: 'Developer, Company',
+                dateRange: '2020 — 2023'
+            });
+            const md = manager.generateMarkdown(header.id);
+            expect(md).toContain('### Developer, Company');
+            expect(md).toContain('<span class="spacer">');
+            expect(md).toContain('2020 — 2023');
+        });
+    });
+});
+```
+
+**Required test count: 8 tests minimum**
+
+---
+
+#### 5. JobPostManager Tests (`job-post-manager.test.cjs`)
+
+```javascript
+const JobPostManager = require('../job-post-manager.cjs');
+const mockFs = require('mock-fs');
+
+describe('JobPostManager', () => {
+    let manager;
+    let mockPaths;
+
+    beforeEach(() => {
+        mockFs({ '/mock/job-posts': {} });
+        mockPaths = {
+            getJobPostIndexPath: () => '/mock/job-posts/index.json',
+            getJobPostFilePath: (filename) => `/mock/job-posts/${filename}`,
+            getJobPostsPath: () => '/mock/job-posts'
+        };
+        manager = new JobPostManager(mockPaths);
+    });
+
+    afterEach(() => {
+        mockFs.restore();
+    });
+
+    describe('addJobPost()', () => {
+        it('should create job post with markdown file', () => {
+            const result = manager.addJobPost({
+                title: 'Senior Developer',
+                company: 'TechCorp',
+                description: 'Build amazing things',
+                keySkills: ['React', 'Node.js']
+            });
+
+            expect(result.id).toBeDefined();
+            expect(result.title).toBe('Senior Developer');
+            expect(result.status).toBe('active');
+        });
+
+        it('should throw TypeError for missing required fields', () => {
+            expect(() => manager.addJobPost({ title: 'Test' })).toThrow(TypeError);
+        });
+
+        it('should throw Error for duplicate job post', () => {
+            manager.addJobPost({ title: 'Dev', company: 'Co' });
+            expect(() => manager.addJobPost({ title: 'Dev', company: 'Co' })).toThrow();
+        });
+    });
+
+    describe('getJobPost()', () => {
+        it('should return job post with content', () => {
+            const created = manager.addJobPost({
+                title: 'Engineer',
+                company: 'StartupXYZ',
+                description: 'Work on cutting-edge tech'
+            });
+
+            const retrieved = manager.getJobPost(created.id);
+            expect(retrieved.content).toContain('# Engineer');
+            expect(retrieved.content).toContain('StartupXYZ');
+        });
+
+        it('should return null for non-existent post', () => {
+            expect(manager.getJobPost('fake-id')).toBeNull();
+        });
+    });
+
+    describe('getActiveJobPosts()', () => {
+        it('should filter to active posts only', () => {
+            manager.addJobPost({ title: 'Job1', company: 'Co1' });
+            const job2 = manager.addJobPost({ title: 'Job2', company: 'Co2' });
+            manager.updateJobPost(job2.id, { status: 'archived' });
+
+            const active = manager.getActiveJobPosts();
+            expect(active.length).toBe(1);
+            expect(active[0].title).toBe('Job1');
+        });
+    });
+
+    describe('deleteJobPost()', () => {
+        it('should remove post and markdown file', () => {
+            const post = manager.addJobPost({ title: 'ToDelete', company: 'Gone' });
+            manager.deleteJobPost(post.id);
+            
+            expect(manager.getJobPost(post.id)).toBeNull();
+        });
+    });
+
+    describe('getJobContext()', () => {
+        it('should return context object for AI', () => {
+            const post = manager.addJobPost({
+                title: 'ML Engineer',
+                company: 'AI Corp',
+                keySkills: ['Python', 'TensorFlow'],
+                description: 'Build ML models'
+            });
+
+            const context = manager.getJobContext(post.id);
+            expect(context.title).toBe('ML Engineer');
+            expect(context.keySkills).toContain('Python');
+            expect(context.content).toBeDefined();
+        });
+    });
+});
+```
+
+**Required test count: 9 tests minimum**
+
+---
+
+#### 6. bulletParser Tests (`bulletParser.test.js`)
+
+```javascript
+import { parseResumeBullets, parseResumeHeaders, analyzeBulletQuality, cleanBulletText } from '../bulletParser.js';
+
+describe('bulletParser', () => {
+    describe('parseResumeBullets()', () => {
+        it('should extract bullets from markdown', () => {
+            const markdown = `## Experience
+
+### Developer, Company
+
+- Built scalable API serving 1M requests
+- Optimized database reducing query time by 50%
+`;
+            const bullets = parseResumeBullets(markdown);
+            expect(bullets.length).toBe(2);
+            expect(bullets[0].text).toContain('Built scalable API');
+        });
+
+        it('should associate bullets with parent headers', () => {
+            const markdown = `## Experience
+
+### Dev, Co
+
+- Did something great
+`;
+            const bullets = parseResumeBullets(markdown);
+            expect(bullets[0].parentHeader.headerText).toBe('Dev, Co');
+            expect(bullets[0].parentHeader.sectionHeader).toBe('Experience');
+        });
+
+        it('should handle nested list items', () => {
+            const markdown = `## Skills
+
+- Main skill
+  - Sub skill 1
+  - Sub skill 2
+`;
+            const bullets = parseResumeBullets(markdown);
+            // Should flatten or handle appropriately
+            expect(bullets.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('parseResumeHeaders()', () => {
+        it('should extract h2 and h3 headers', () => {
+            const markdown = `# Name
+
+## Experience
+
+### Job Title, Company <span class="spacer"></span> 2020 — 2023
+
+## Skills
+`;
+            const headers = parseResumeHeaders(markdown);
+            expect(headers.filter(h => h.level === 2).length).toBe(2);
+            expect(headers.filter(h => h.level === 3).length).toBe(1);
+        });
+
+        it('should extract date ranges from h3 headers', () => {
+            const markdown = `### Senior Dev, Corp <span class="spacer"></span> Jan 2020 — Present`;
+            const headers = parseResumeHeaders(markdown);
+            expect(headers[0].dateRange).toBe('Jan 2020 — Present');
+        });
+    });
+
+    describe('analyzeBulletQuality()', () => {
+        it('should score bullet with metrics higher', () => {
+            const withMetrics = analyzeBulletQuality('Improved performance by 50%');
+            const without = analyzeBulletQuality('Improved performance significantly');
+            expect(withMetrics.score).toBeGreaterThan(without.score);
+        });
+
+        it('should detect strong action verbs', () => {
+            const result = analyzeBulletQuality('Engineered a solution');
+            expect(result.hasVerb).toBe(true);
+        });
+    });
+
+    describe('cleanBulletText()', () => {
+        it('should remove markdown links', () => {
+            const result = cleanBulletText('Used [React](https://react.dev) framework');
+            expect(result).toBe('Used React framework');
+        });
+
+        it('should remove inline code', () => {
+            const result = cleanBulletText('Implemented `async/await` patterns');
+            expect(result).toBe('Implemented async/await patterns');
+        });
+    });
+});
+```
+
+**Required test count: 10 tests minimum**
+
+---
+
+### Iteration Workflow for Agent
+
+For EACH implementation step, the agent MUST:
+
+```
+1. CREATE test file with all test cases for the module
+2. RUN tests: `npm test -- --testPathPattern=[module-name]`
+3. CAPTURE failing output (Red phase evidence)
+4. IMPLEMENT the module code
+5. RUN tests again
+6. CAPTURE passing output (Green phase evidence)
+7. REFACTOR if needed (apply SOLID, patterns)
+8. RUN tests again to verify still passing
+9. DOCUMENT evidence in implementation notes
+10. ONLY proceed to next step if ALL tests pass
+```
+
+**Blocking Rule:** If any test fails, the agent MUST fix the implementation before proceeding. DO NOT skip to the next module with failing tests.
 
 ---
 
