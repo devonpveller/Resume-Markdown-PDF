@@ -21,20 +21,38 @@
         "electron:build": "npm run build && electron-builder",
         "electron:build:win": "npm run build && electron-builder --win",
         "electron:build:mac": "npm run build && electron-builder --mac",
-        "electron:build:linux": "npm run build && electron-builder --linux"
+        "electron:build:linux": "npm run build && electron-builder --linux",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
+        "test:managers": "jest --testPathPattern=managers",
+        "test:services": "jest --testPathPattern=services",
+        "test:components": "jest --testPathPattern=components"
     },
     "dependencies": {
         "marked": "^4.3.0",
         "puppeteer": "^24.33.0",
         "react": "^18.2.0",
-        "react-dom": "^18.2.0"
+        "react-dom": "^18.2.0",
+        "uuid": "^13.0.0"
     },
     "devDependencies": {
+        "@babel/core": "^7.28.6",
+        "@babel/preset-env": "^7.28.6",
+        "@babel/preset-react": "^7.28.5",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.1",
+        "@types/jest": "^30.0.0",
         "@vitejs/plugin-react": "^5.1.2",
+        "babel-jest": "^30.2.0",
         "concurrently": "^7.6.0",
         "cross-env": "^10.1.0",
         "electron": "^39.2.7",
         "electron-builder": "^26.0.12",
+        "identity-obj-proxy": "^3.0.0",
+        "jest": "^30.2.0",
+        "jest-environment-jsdom": "^30.2.0",
+        "mock-fs": "^5.5.0",
         "vite": "^7.3.0",
         "wait-on": "^9.0.3"
     }
