@@ -1535,140 +1535,7 @@ export function analyzeBulletQuality(bulletText) {
 
 ---
 
-### Step 3: IPC Handlers in Electron Main Process
-
-Add to `export-to-pdf/electron/main.cjs` (after existing imports at top):
-
-```javascript
-// Add at top with other requires
-const BulletLibraryManager = require('./bullet-library-manager.cjs');
-
-// Add after getSourcePath() function definition
-let bulletLibraryManager = null;
-
-const getBulletLibraryManager = () => {
-    if (!bulletLibraryManager) {
-        const userDataPath = app.getPath('userData');
-        bulletLibraryManager = new BulletLibraryManager(userDataPath);
-    }
-    return bulletLibraryManager;
-};
-```
-
-Add these IPC handlers (after existing `ipcMain.handle` blocks, around line 430):
-
-```javascript
-// ============================================
-// BULLET LIBRARY IPC HANDLERS
-// ============================================
-
-ipcMain.handle('get-bullet-library', async (event, resumeId = 'default') => {
-    try {
-        const manager = getBulletLibraryManager();
-        const library = manager.load(resumeId);
-        return { success: true, library };
-    } catch (error) {
-        console.error('Error loading bullet library:', error);
-        return { success: false, error: error.message };
-    }
-});
-
-ipcMain.handle('save-bullet-library', async (event, library) => {
-    try {
-        const manager = getBulletLibraryManager();
-        const saved = manager.save(library);
-        return { success: true, library: saved };
-    } catch (error) {
-        console.error('Error saving bullet library:', error);
-        return { success: false, error: error.message };
-    }
-});
-
-ipcMain.handle('sync-bullet-library', async (event, resumeId, parsedSections) => {
-    try {
-        const manager = getBulletLibraryManager();
-        const library = manager.syncWithResume(resumeId, parsedSections);
-        return { success: true, library };
-    } catch (error) {
-        console.error('Error syncing bullet library:', error);
-        return { success: false, error: error.message };
-    }
-});
-
-ipcMain.handle('add-bullet-variant', async (event, { resumeId, bulletId, variantText, source, model }) => {
-    try {
-        const manager = getBulletLibraryManager();
-        const variant = manager.addVariant(resumeId, bulletId, variantText, source, model);
-        return { success: true, variant };
-    } catch (error) {
-        console.error('Error adding bullet variant:', error);
-        return { success: false, error: error.message };
-    }
-});
-
-ipcMain.handle('rephrase-bullet', async (event, { bulletText, context, apiEndpoint, model }) => {
-    try {
-        // Call local LLM API (LM Studio compatible endpoint)
-        const endpoint = apiEndpoint || 'http://localhost:1234/v1/chat/completions';
-        const modelName = model || 'qwen3-coder-30b';
-
-        const prompt = `You are a professional resume writer. Rephrase the following resume bullet point to be more impactful while maintaining accuracy. Follow the STAR method (Situation, Task, Action, Result).
-
-Rules:
-- Start with a strong action verb (Engineered, Architected, Led, Developed)
-- Include quantified metrics if present in original
-- Keep under 2 lines
-- Maintain technical accuracy
-- Focus on impact and results
-
-Context (job title/company): ${context || 'Not provided'}
-
-Original bullet:
-${bulletText}
-
-Provide exactly 3 alternative phrasings, one per line, without numbering or bullet points.`;
-
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: modelName,
-                messages: [
-                    { role: 'system', content: 'You are a professional resume writer. Respond only with the rephrased bullets, no explanations.' },
-                    { role: 'user', content: prompt }
-                ],
-                temperature: 0.7,
-                max_tokens: 500
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`LLM API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const content = data.choices[0]?.message?.content || '';
-        
-        // Parse response into individual variants
-        const variants = content
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 10 && !line.match(/^[\d.)\-*]+\s*/))
-            .slice(0, 3);
-
-        return { success: true, variants, model: modelName };
-    } catch (error) {
-        console.error('Error rephrasing bullet:', error);
-        return { success: false, error: error.message };
-    }
-});
-```
-
-Replace the above `rephrase-bullet` handler with the enhanced version below that supports job post context.
-
----
-
-### Step 7: IPC Handlers in Electron Main Process
+### Step 6: IPC Handlers in Electron Main Process
 
 Add to `export-to-pdf/electron/main.cjs` (at top with other requires):
 
@@ -1900,6 +1767,46 @@ ipcMain.handle('delete-job-post', async (event, postId) => {
     }
 });
 
+ipcMain.handle('validate-job-post-markdown', async (event, markdown) => {
+    try {
+        const manager = getJobPostManager();
+        const validation = manager.validateJobPostMarkdown(markdown);
+        return { success: true, ...validation };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('import-job-post-from-clipboard', async (event, markdown) => {
+    try {
+        const manager = getJobPostManager();
+        
+        // Validate first
+        const validation = manager.validateJobPostMarkdown(markdown);
+        if (!validation.valid) {
+            return { 
+                success: false, 
+                error: validation.errors.join('; '),
+                errors: validation.errors,
+                warnings: validation.warnings
+            };
+        }
+        
+        // Add job post with extracted info
+        const post = manager.addJobPost({
+            description: markdown
+        });
+        
+        return { 
+            success: true, 
+            post,
+            warnings: validation.warnings 
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
 // ============================================
 // AI REPHRASING WITH JOB CONTEXT
 // ============================================
@@ -2057,7 +1964,7 @@ ipcMain.handle('find-similar-bullets', async (event, { text, threshold }) => {
 
 ---
 
-### Step 8: Preload API Extensions
+### Step 7: Preload API Extensions
 
 Update `export-to-pdf/electron/preload.js` to expose all new APIs:
 
@@ -2108,6 +2015,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     addJobPost: (postData) => ipcRenderer.invoke('add-job-post', postData),
     updateJobPost: (data) => ipcRenderer.invoke('update-job-post', data),
     deleteJobPost: (postId) => ipcRenderer.invoke('delete-job-post', postId),
+    validateJobPostMarkdown: (markdown) => ipcRenderer.invoke('validate-job-post-markdown', markdown),
+    importJobPostFromClipboard: (markdown) => ipcRenderer.invoke('import-job-post-from-clipboard', markdown),
 
     // ============================================
     // AI REPHRASING APIs
@@ -2126,7 +2035,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 ---
 
-### Step 9: React Components
+### Step 8: React Components
 
 #### React Hook: useBulletLibrary.js
 
@@ -2293,35 +2202,316 @@ export function useBulletLibrary(resumeMarkdown, resumeId = 'default') {
 
 ---
 
-### Step 6: Bullet Library Panel UI
+### Step 9: Bullet Library Panel UI with Variant Management
 
 Create `export-to-pdf/src/components/BulletLibraryPanel.jsx`:
 
 ```jsx
-import React, { useState, useEffect } from 'react';
-import { useBulletLibrary } from '../hooks/useBulletLibrary';
+import React, { useState, useEffect, useCallback } from 'react';
 import { analyzeBulletQuality } from '../services/bulletParser';
 
 function BulletLibraryPanel({ resumeMarkdown, isOpen, onClose }) {
-    const { 
-        library, 
-        loading, 
-        error, 
-        syncWithResume, 
-        rephraseBullet 
-    } = useBulletLibrary(resumeMarkdown);
+    // State
+    const [library, setLibrary] = useState(null);
+    const [headers, setHeaders] = useState([]);
+    const [jobPosts, setJobPosts] = useState([]);
+    const [selectedJobPost, setSelectedJobPost] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [expandedSections, setExpandedSections] = useState({});
     const [expandedBullets, setExpandedBullets] = useState({});
     const [rephrasing, setRephrasing] = useState(null);
+    const [pendingVariants, setPendingVariants] = useState({}); // bulletId -> variants[]
     const [copyFeedback, setCopyFeedback] = useState(null);
+    
+    // Job post import modal
+    const [showJobPostImport, setShowJobPostImport] = useState(false);
+    const [clipboardContent, setClipboardContent] = useState('');
+    const [importError, setImportError] = useState(null);
 
-    // Sync when resume changes
+    // Load data on mount
     useEffect(() => {
-        if (resumeMarkdown && isOpen) {
-            syncWithResume();
+        async function loadData() {
+            if (!window.electronAPI) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                
+                // Load bullet library
+                const libResult = await window.electronAPI.getBulletLibrary();
+                if (libResult.success) setLibrary(libResult.library);
+
+                // Load headers
+                const headerResult = await window.electronAPI.getHeaderLibrary();
+                if (headerResult.success) setHeaders(headerResult.headers);
+
+                // Load job posts
+                const jobResult = await window.electronAPI.getJobPosts();
+                if (jobResult.success) setJobPosts(jobResult.posts);
+
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
         }
-    }, [resumeMarkdown, isOpen, syncWithResume]);
+
+        if (isOpen) loadData();
+    }, [isOpen]);
+
+    // Reload library after changes
+    const reloadLibrary = useCallback(async () => {
+        const result = await window.electronAPI.getBulletLibrary();
+        if (result.success) setLibrary(result.library);
+    }, []);
+
+    // ============================================
+    // VARIANT MANAGEMENT
+    // ============================================
+
+    const handleRephrase = async (bullet, sectionContext) => {
+        if (!selectedJobPost) {
+            alert('Please select a job post first to tailor the rephrasing.');
+            return;
+        }
+
+        setRephrasing(bullet.id);
+        try {
+            const result = await window.electronAPI.rephraseBulletForJob({
+                bulletText: bullet.text,
+                bulletId: bullet.id,
+                jobPostId: selectedJobPost
+            });
+
+            if (result.success && result.pendingVariants?.length > 0) {
+                // Store pending variants for this bullet (not yet saved)
+                setPendingVariants(prev => ({
+                    ...prev,
+                    [bullet.id]: result.pendingVariants
+                }));
+            } else if (!result.success) {
+                alert(`Rephrasing failed: ${result.error}`);
+            }
+        } finally {
+            setRephrasing(null);
+        }
+    };
+
+    const handleAcceptVariant = async (bulletId, variantIndex) => {
+        const variants = pendingVariants[bulletId];
+        if (!variants || !variants[variantIndex]) return;
+
+        const variant = variants[variantIndex];
+
+        // Save to library
+        const result = await window.electronAPI.addPendingVariant({
+            bulletId,
+            text: variant.text,
+            source: variant.source,
+            model: variant.model,
+            jobPostRef: variant.jobPostRef
+        });
+
+        if (result.success && !result.duplicate) {
+            // Accept it (registers hash)
+            await window.electronAPI.acceptVariant({
+                bulletId,
+                variantId: result.variant.id
+            });
+
+            // Remove from pending
+            setPendingVariants(prev => {
+                const updated = [...(prev[bulletId] || [])];
+                updated.splice(variantIndex, 1);
+                return { ...prev, [bulletId]: updated };
+            });
+
+            // Reload library to show new variant
+            await reloadLibrary();
+        } else if (result.duplicate) {
+            alert('This variant already exists in your library.');
+            // Remove from pending anyway
+            setPendingVariants(prev => {
+                const updated = [...(prev[bulletId] || [])];
+                updated.splice(variantIndex, 1);
+                return { ...prev, [bulletId]: updated };
+            });
+        }
+    };
+
+    const handleRejectVariant = async (bulletId, variantIndex) => {
+        // Simply remove from pending (never saved)
+        setPendingVariants(prev => {
+            const updated = [...(prev[bulletId] || [])];
+            updated.splice(variantIndex, 1);
+            return { ...prev, [bulletId]: updated };
+        });
+    };
+
+    const handleRephraseVariant = async (bulletId, variantIndex) => {
+        // Use this variant as the new source for rephrasing
+        const variants = pendingVariants[bulletId];
+        if (!variants || !variants[variantIndex]) return;
+
+        const variantText = variants[variantIndex].text;
+
+        if (!selectedJobPost) {
+            alert('Please select a job post first.');
+            return;
+        }
+
+        setRephrasing(`${bulletId}-variant-${variantIndex}`);
+        try {
+            const result = await window.electronAPI.rephraseBulletForJob({
+                bulletText: variantText,
+                bulletId: bulletId,
+                jobPostId: selectedJobPost
+            });
+
+            if (result.success && result.pendingVariants?.length > 0) {
+                // Replace this variant with new ones
+                setPendingVariants(prev => {
+                    const updated = [...(prev[bulletId] || [])];
+                    updated.splice(variantIndex, 1, ...result.pendingVariants);
+                    return { ...prev, [bulletId]: updated };
+                });
+            }
+        } finally {
+            setRephrasing(null);
+        }
+    };
+
+    // Handle rephrase for already-saved variants
+    const handleRephraseSavedVariant = async (bulletId, variant) => {
+        if (!selectedJobPost) {
+            alert('Please select a job post first.');
+            return;
+        }
+
+        setRephrasing(variant.id);
+        try {
+            const result = await window.electronAPI.rephraseBulletForJob({
+                bulletText: variant.text,
+                bulletId: bulletId,
+                jobPostId: selectedJobPost
+            });
+
+            if (result.success && result.pendingVariants?.length > 0) {
+                // Add new pending variants
+                setPendingVariants(prev => ({
+                    ...prev,
+                    [bulletId]: [...(prev[bulletId] || []), ...result.pendingVariants]
+                }));
+            }
+        } finally {
+            setRephrasing(null);
+        }
+    };
+
+    // Delete a saved variant
+    const handleDeleteSavedVariant = async (bulletId, variantId) => {
+        if (!confirm('Delete this saved variant?')) return;
+
+        const result = await window.electronAPI.rejectVariant({ bulletId, variantId });
+        if (result.success) {
+            await reloadLibrary();
+        }
+    };
+
+    // ============================================
+    // JOB POST IMPORT FROM CLIPBOARD
+    // ============================================
+
+    const handlePasteFromClipboard = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            setClipboardContent(text);
+            setImportError(null);
+        } catch (err) {
+            setImportError('Failed to read clipboard. Please paste manually.');
+        }
+    };
+
+    const validateJobPostMarkdown = (markdown) => {
+        const errors = [];
+
+        if (!markdown || markdown.trim().length < 50) {
+            errors.push('Content is too short. Please paste a complete job description.');
+        }
+
+        // Check for h1 header (will be used as filename)
+        const h1Match = markdown.match(/^#\s+(.+)$/m);
+        if (!h1Match) {
+            errors.push('Missing H1 header (# Title). Add a title line like: # Senior Developer at Company');
+        }
+
+        // Check for some basic job post content indicators
+        const hasDescription = /description|responsibilities|requirements|qualifications|about/i.test(markdown);
+        if (!hasDescription) {
+            errors.push('Content doesn\'t appear to be a job posting. Include description, requirements, or qualifications.');
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors,
+            title: h1Match ? h1Match[1].trim() : null
+        };
+    };
+
+    const handleImportJobPost = async () => {
+        const validation = validateJobPostMarkdown(clipboardContent);
+
+        if (!validation.valid) {
+            setImportError(validation.errors.join('\n'));
+            return;
+        }
+
+        try {
+            // Extract additional info for metadata
+            const companyMatch = clipboardContent.match(/company[:\s]+([^\n]+)/i) 
+                || validation.title.match(/at\s+(.+)$/i);
+            const company = companyMatch ? companyMatch[1].trim() : 'Unknown';
+
+            // Extract key skills (look for skills section or common keywords)
+            const skillsMatch = clipboardContent.match(/skills?[:\s]+([^\n]+)/i);
+            const keySkills = skillsMatch 
+                ? skillsMatch[1].split(/[,;]/).map(s => s.trim()).filter(s => s.length > 0)
+                : [];
+
+            const result = await window.electronAPI.addJobPost({
+                title: validation.title,
+                company: company,
+                description: clipboardContent,
+                keySkills: keySkills
+            });
+
+            if (result.success) {
+                // Reload job posts
+                const jobResult = await window.electronAPI.getJobPosts();
+                if (jobResult.success) {
+                    setJobPosts(jobResult.posts);
+                    setSelectedJobPost(result.post.id);
+                }
+
+                // Close modal
+                setShowJobPostImport(false);
+                setClipboardContent('');
+                setImportError(null);
+            } else {
+                setImportError(result.error);
+            }
+        } catch (err) {
+            setImportError(err.message);
+        }
+    };
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
 
     const toggleSection = (sectionId) => {
         setExpandedSections(prev => ({
@@ -2337,18 +2527,6 @@ function BulletLibraryPanel({ resumeMarkdown, isOpen, onClose }) {
         }));
     };
 
-    const handleRephrase = async (bullet, sectionContext) => {
-        setRephrasing(bullet.id);
-        try {
-            const result = await rephraseBullet(bullet.id, bullet.text, sectionContext);
-            if (!result.success) {
-                alert(`Rephrasing failed: ${result.error}`);
-            }
-        } finally {
-            setRephrasing(null);
-        }
-    };
-
     const copyToClipboard = async (text, id) => {
         await navigator.clipboard.writeText(`- ${text}`);
         setCopyFeedback(id);
@@ -2357,11 +2535,15 @@ function BulletLibraryPanel({ resumeMarkdown, isOpen, onClose }) {
 
     if (!isOpen) return null;
 
+    // ============================================
+    // STYLES
+    // ============================================
+
     const panelStyles = {
         position: 'fixed',
         right: 0,
         top: 0,
-        width: '400px',
+        width: '450px',
         height: '100vh',
         backgroundColor: '#1e1e1e',
         color: '#fff',
@@ -2379,25 +2561,607 @@ function BulletLibraryPanel({ resumeMarkdown, isOpen, onClose }) {
         alignItems: 'center'
     };
 
+    const jobPostSelectorStyles = {
+        padding: '12px 16px',
+        backgroundColor: '#252525',
+        borderBottom: '1px solid #333',
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        flexWrap: 'wrap'
+    };
+
     const contentStyles = {
         flex: 1,
         overflowY: 'auto',
         padding: '16px'
     };
 
+    const buttonStyles = {
+        padding: '4px 8px',
+        fontSize: '11px',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '3px',
+        cursor: 'pointer'
+    };
+
+    const pendingVariantStyles = {
+        padding: '10px',
+        backgroundColor: '#2a3f2a',
+        borderRadius: '4px',
+        marginBottom: '8px',
+        border: '1px dashed #4caf50'
+    };
+
+    const savedVariantStyles = {
+        padding: '8px',
+        backgroundColor: '#333',
+        borderRadius: '4px',
+        marginBottom: '6px',
+        fontSize: '12px'
+    };
+
+    // ============================================
+    // RENDER
+    // ============================================
+
     return (
         <div style={panelStyles}>
+            {/* Header */}
             <div style={headerStyles}>
                 <h2 style={{ margin: 0, fontSize: '18px' }}>📋 Bullet Library</h2>
                 <button 
                     onClick={onClose}
+                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' }}
+                >
+                    ×
+                </button>
+            </div>
+
+            {/* Job Post Selector */}
+            <div style={jobPostSelectorStyles}>
+                <label style={{ fontSize: '12px', color: '#aaa' }}>Target Job:</label>
+                <select
+                    value={selectedJobPost || ''}
+                    onChange={(e) => setSelectedJobPost(e.target.value || null)}
                     style={{
-                        background: 'none',
-                        border: 'none',
+                        flex: 1,
+                        padding: '6px 8px',
+                        backgroundColor: '#333',
                         color: '#fff',
-                        fontSize: '24px',
-                        cursor: 'pointer'
+                        border: '1px solid #444',
+                        borderRadius: '4px',
+                        fontSize: '12px'
                     }}
+                >
+                    <option value="">-- Select Job Post --</option>
+                    {jobPosts.filter(p => p.status === 'active').map(post => (
+                        <option key={post.id} value={post.id}>
+                            {post.title} @ {post.company}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={() => setShowJobPostImport(true)}
+                    style={{
+                        ...buttonStyles,
+                        backgroundColor: '#5c6bc0',
+                        padding: '6px 10px'
+                    }}
+                    title="Import job post from clipboard"
+                >
+                    📋 Import Job
+                </button>
+            </div>
+
+            {/* Content */}
+            <div style={contentStyles}>
+                {loading && <p>Loading library...</p>}
+                {error && <p style={{ color: '#ff6b6b' }}>Error: {error}</p>}
+                
+                {/* Bullets by Section */}
+                {library?.bullets && (() => {
+                    // Group bullets by parent header
+                    const sections = {};
+                    library.bullets.forEach(bullet => {
+                        const sectionKey = bullet.parentHeader?.headerText || 'Uncategorized';
+                        if (!sections[sectionKey]) {
+                            sections[sectionKey] = {
+                                headerText: sectionKey,
+                                headerLevel: bullet.parentHeader?.headerLevel || 2,
+                                bullets: []
+                            };
+                        }
+                        sections[sectionKey].bullets.push(bullet);
+                    });
+
+                    return Object.values(sections).map((section, sIdx) => (
+                        <div key={sIdx} style={{ marginBottom: '16px' }}>
+                            {/* Section Header */}
+                            <div 
+                                onClick={() => toggleSection(section.headerText)}
+                                style={{
+                                    padding: '10px 12px',
+                                    backgroundColor: '#2d2d2d',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <span>
+                                    {section.headerLevel === 2 ? '📁' : '📄'} {section.headerText}
+                                </span>
+                                <span style={{ color: '#888' }}>
+                                    {section.bullets.length} {expandedSections[section.headerText] ? '▼' : '▶'}
+                                </span>
+                            </div>
+
+                            {/* Bullets in Section */}
+                            {expandedSections[section.headerText] && (
+                                <div style={{ paddingLeft: '12px', marginTop: '8px' }}>
+                                    {section.bullets.map(bullet => {
+                                        const quality = analyzeBulletQuality(bullet.text);
+                                        const bulletPending = pendingVariants[bullet.id] || [];
+
+                                        return (
+                                            <div key={bullet.id} style={{ marginBottom: '16px' }}>
+                                                {/* Main Bullet */}
+                                                <div style={{
+                                                    padding: '10px',
+                                                    backgroundColor: '#2a2a2a',
+                                                    borderRadius: '4px',
+                                                    borderLeft: `3px solid ${quality.score >= 2 ? '#4caf50' : quality.score === 1 ? '#ff9800' : '#f44336'}`
+                                                }}>
+                                                    <div style={{ fontSize: '13px', lineHeight: '1.5' }}>
+                                                        • {bullet.text}
+                                                    </div>
+                                                    
+                                                    {/* Bullet Action Buttons */}
+                                                    <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                        <button
+                                                            onClick={() => copyToClipboard(bullet.text, bullet.id)}
+                                                            style={{
+                                                                ...buttonStyles,
+                                                                backgroundColor: copyFeedback === bullet.id ? '#4caf50' : '#444'
+                                                            }}
+                                                        >
+                                                            {copyFeedback === bullet.id ? '✓ Copied!' : '📋 Copy'}
+                                                        </button>
+                                                        
+                                                        <button
+                                                            onClick={() => handleRephrase(bullet, section.headerText)}
+                                                            disabled={rephrasing === bullet.id || !selectedJobPost}
+                                                            style={{
+                                                                ...buttonStyles,
+                                                                backgroundColor: !selectedJobPost ? '#555' : rephrasing === bullet.id ? '#666' : '#5c6bc0',
+                                                                cursor: !selectedJobPost ? 'not-allowed' : 'pointer'
+                                                            }}
+                                                            title={!selectedJobPost ? 'Select a job post first' : 'Generate AI variants for this job'}
+                                                        >
+                                                            {rephrasing === bullet.id ? '⏳...' : '🤖 Rephrase'}
+                                                        </button>
+
+                                                        {(bullet.variants?.length > 0 || bulletPending.length > 0) && (
+                                                            <button
+                                                                onClick={() => toggleBullet(bullet.id)}
+                                                                style={{ ...buttonStyles, backgroundColor: '#333' }}
+                                                            >
+                                                                {expandedBullets[bullet.id] ? '▼' : '▶'} 
+                                                                {bullet.variants?.length || 0} saved, {bulletPending.length} pending
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Expanded: Pending & Saved Variants */}
+                                                    {expandedBullets[bullet.id] && (
+                                                        <div style={{ marginTop: '12px', paddingLeft: '12px', borderLeft: '2px solid #444' }}>
+                                                            
+                                                            {/* PENDING VARIANTS (not yet saved) */}
+                                                            {bulletPending.length > 0 && (
+                                                                <div style={{ marginBottom: '12px' }}>
+                                                                    <div style={{ fontSize: '11px', color: '#4caf50', marginBottom: '6px', fontWeight: 'bold' }}>
+                                                                        ⏳ PENDING VARIANTS (review required)
+                                                                    </div>
+                                                                    {bulletPending.map((variant, vIdx) => (
+                                                                        <div key={vIdx} style={pendingVariantStyles}>
+                                                                            <div style={{ fontSize: '12px', marginBottom: '8px' }}>
+                                                                                • {variant.text}
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                                                <button
+                                                                                    onClick={() => handleAcceptVariant(bullet.id, vIdx)}
+                                                                                    style={{ ...buttonStyles, backgroundColor: '#4caf50' }}
+                                                                                >
+                                                                                    ✓ Accept
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleRejectVariant(bullet.id, vIdx)}
+                                                                                    style={{ ...buttonStyles, backgroundColor: '#f44336' }}
+                                                                                >
+                                                                                    ✗ Reject
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleRephraseVariant(bullet.id, vIdx)}
+                                                                                    disabled={rephrasing === `${bullet.id}-variant-${vIdx}` || !selectedJobPost}
+                                                                                    style={{ ...buttonStyles, backgroundColor: '#5c6bc0' }}
+                                                                                >
+                                                                                    🔄 Rephrase
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => copyToClipboard(variant.text, `pending-${bullet.id}-${vIdx}`)}
+                                                                                    style={{
+                                                                                        ...buttonStyles,
+                                                                                        backgroundColor: copyFeedback === `pending-${bullet.id}-${vIdx}` ? '#4caf50' : '#555'
+                                                                                    }}
+                                                                                >
+                                                                                    📋
+                                                                                </button>
+                                                                                <span style={{ color: '#888', fontSize: '10px', marginLeft: 'auto' }}>
+                                                                                    🤖 {variant.model || 'AI'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* SAVED VARIANTS */}
+                                                            {bullet.variants?.length > 0 && (
+                                                                <div>
+                                                                    <div style={{ fontSize: '11px', color: '#888', marginBottom: '6px' }}>
+                                                                        💾 SAVED VARIANTS
+                                                                    </div>
+                                                                    {bullet.variants.filter(v => v.accepted).map(variant => (
+                                                                        <div key={variant.id} style={savedVariantStyles}>
+                                                                            <div style={{ marginBottom: '6px' }}>• {variant.text}</div>
+                                                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                                                <button
+                                                                                    onClick={() => copyToClipboard(variant.text, variant.id)}
+                                                                                    style={{
+                                                                                        ...buttonStyles,
+                                                                                        backgroundColor: copyFeedback === variant.id ? '#4caf50' : '#555',
+                                                                                        padding: '3px 6px',
+                                                                                        fontSize: '10px'
+                                                                                    }}
+                                                                                >
+                                                                                    {copyFeedback === variant.id ? '✓' : '📋'}
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleRephraseSavedVariant(bullet.id, variant)}
+                                                                                    disabled={rephrasing === variant.id || !selectedJobPost}
+                                                                                    style={{
+                                                                                        ...buttonStyles,
+                                                                                        backgroundColor: '#5c6bc0',
+                                                                                        padding: '3px 6px',
+                                                                                        fontSize: '10px'
+                                                                                    }}
+                                                                                >
+                                                                                    🔄
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteSavedVariant(bullet.id, variant.id)}
+                                                                                    style={{
+                                                                                        ...buttonStyles,
+                                                                                        backgroundColor: '#c62828',
+                                                                                        padding: '3px 6px',
+                                                                                        fontSize: '10px'
+                                                                                    }}
+                                                                                >
+                                                                                    🗑
+                                                                                </button>
+                                                                                <span style={{ color: '#666', fontSize: '10px', marginLeft: 'auto' }}>
+                                                                                    {variant.jobPostRef && `📌 ${variant.jobPostRef}`}
+                                                                                    {' '}{variant.source === 'ai-rephrase' ? `🤖 ${variant.model || 'AI'}` : '✍️'}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    ));
+                })()}
+
+                {library?.bullets?.length === 0 && !loading && (
+                    <p style={{ color: '#888', textAlign: 'center', padding: '20px' }}>
+                        No bullets found in library.<br/>
+                        Import a resume to populate your bullet library.
+                    </p>
+                )}
+            </div>
+
+            {/* Job Post Import Modal */}
+            {showJobPostImport && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000
+                }}>
+                    <div style={{
+                        backgroundColor: '#2a2a2a',
+                        borderRadius: '8px',
+                        padding: '24px',
+                        width: '500px',
+                        maxHeight: '80vh',
+                        overflow: 'auto'
+                    }}>
+                        <h3 style={{ margin: '0 0 16px 0' }}>📋 Import Job Post from Clipboard</h3>
+                        
+                        <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '12px' }}>
+                            Paste a job posting as Markdown. Must include an H1 header (# Title) which will be used as the filename.
+                        </p>
+
+                        <button
+                            onClick={handlePasteFromClipboard}
+                            style={{
+                                ...buttonStyles,
+                                backgroundColor: '#5c6bc0',
+                                padding: '8px 16px',
+                                marginBottom: '12px'
+                            }}
+                        >
+                            📋 Paste from Clipboard
+                        </button>
+
+                        <textarea
+                            value={clipboardContent}
+                            onChange={(e) => setClipboardContent(e.target.value)}
+                            placeholder="# Job Title at Company&#10;&#10;## Description&#10;...&#10;&#10;## Requirements&#10;..."
+                            style={{
+                                width: '100%',
+                                height: '200px',
+                                backgroundColor: '#1e1e1e',
+                                color: '#fff',
+                                border: '1px solid #444',
+                                borderRadius: '4px',
+                                padding: '12px',
+                                fontSize: '12px',
+                                fontFamily: 'monospace',
+                                resize: 'vertical'
+                            }}
+                        />
+
+                        {importError && (
+                            <div style={{
+                                backgroundColor: '#4a1c1c',
+                                border: '1px solid #f44336',
+                                borderRadius: '4px',
+                                padding: '10px',
+                                marginTop: '12px',
+                                fontSize: '12px',
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                ❌ {importError}
+                            </div>
+                        )}
+
+                        {clipboardContent && !importError && (
+                            <div style={{
+                                backgroundColor: '#1c3a1c',
+                                border: '1px solid #4caf50',
+                                borderRadius: '4px',
+                                padding: '10px',
+                                marginTop: '12px',
+                                fontSize: '12px'
+                            }}>
+                                ✓ Preview: {validateJobPostMarkdown(clipboardContent).title || 'No title found'}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => {
+                                    setShowJobPostImport(false);
+                                    setClipboardContent('');
+                                    setImportError(null);
+                                }}
+                                style={{ ...buttonStyles, backgroundColor: '#444', padding: '8px 16px' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleImportJobPost}
+                                disabled={!clipboardContent}
+                                style={{
+                                    ...buttonStyles,
+                                    backgroundColor: clipboardContent ? '#4caf50' : '#555',
+                                    padding: '8px 16px'
+                                }}
+                            >
+                                ✓ Import Job Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default BulletLibraryPanel;
+```
+
+---
+
+### Step 9b: Job Post Manager - Filename from H1
+
+Update `export-to-pdf/electron/job-post-manager.cjs` to extract filename from H1:
+
+```javascript
+/**
+ * Generate filename from first H1 in markdown content
+ */
+extractTitleFromMarkdown(markdown) {
+    const h1Match = markdown.match(/^#\s+(.+)$/m);
+    if (!h1Match) {
+        throw new Error('Markdown must contain an H1 header (# Title)');
+    }
+    return h1Match[1].trim();
+}
+
+/**
+ * Generate a safe filename from the H1 title
+ */
+generateFilenameFromTitle(title) {
+    const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 60);
+    
+    const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    return `${slug}-${date}.md`;
+}
+
+/**
+ * Validate job post markdown before saving
+ */
+validateJobPostMarkdown(markdown) {
+    const errors = [];
+
+    // Check minimum length
+    if (!markdown || markdown.trim().length < 50) {
+        errors.push('Content is too short (minimum 50 characters)');
+    }
+
+    // Check for H1 header
+    const h1Match = markdown.match(/^#\s+(.+)$/m);
+    if (!h1Match) {
+        errors.push('Missing H1 header. Add a line like: # Job Title at Company');
+    }
+
+    // Check for some job-related content
+    const hasJobContent = /description|responsibilities|requirements|qualifications|experience|skills|about/i.test(markdown);
+    if (!hasJobContent) {
+        errors.push('Content doesn\'t appear to be a job posting');
+    }
+
+    // Check for multiple H1s (warning, not error)
+    const h1Count = (markdown.match(/^#\s+/gm) || []).length;
+    const warnings = [];
+    if (h1Count > 1) {
+        warnings.push('Multiple H1 headers found. First H1 will be used as title.');
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+        warnings,
+        title: h1Match ? h1Match[1].trim() : null
+    };
+}
+
+/**
+ * Add a new job post with validation
+ */
+addJobPost(postData) {
+    this.loadIndex();
+
+    // If raw markdown provided, validate and extract info
+    if (postData.description && !postData.title) {
+        const validation = this.validateJobPostMarkdown(postData.description);
+        if (!validation.valid) {
+            throw new Error(validation.errors.join('; '));
+        }
+        postData.title = validation.title;
+    }
+
+    const filename = this.generateFilenameFromTitle(postData.title);
+    const id = filename.replace('.md', '');
+
+    // Check for existing post with same id
+    const existing = this.index.posts.find(p => p.id === id);
+    if (existing) {
+        throw new Error(`Job post already exists: ${postData.title}`);
+    }
+
+    // Create markdown file
+    const markdown = postData.description || this.generateJobPostMarkdown(postData);
+    const filePath = this.paths.getJobPostFilePath(filename);
+    fs.writeFileSync(filePath, markdown);
+
+    // Add to index
+    const post = {
+        id,
+        filename,
+        title: postData.title,
+        company: postData.company || this.extractCompanyFromTitle(postData.title),
+        dateAdded: new Date().toISOString(),
+        url: postData.url || null,
+        status: 'active',
+        keySkills: postData.keySkills || this.extractSkillsFromMarkdown(markdown)
+    };
+
+    this.index.posts.push(post);
+    this.saveIndex();
+
+    return post;
+}
+
+/**
+ * Try to extract company name from title
+ */
+extractCompanyFromTitle(title) {
+    // Pattern: "Title at Company" or "Title - Company" or "Title | Company"
+    const patterns = [
+        /at\s+(.+)$/i,
+        /[-–—|]\s*(.+)$/,
+        /,\s+(.+)$/
+    ];
+
+    for (const pattern of patterns) {
+        const match = title.match(pattern);
+        if (match) return match[1].trim();
+    }
+
+    return 'Unknown';
+}
+
+/**
+ * Extract potential skills from markdown content
+ */
+extractSkillsFromMarkdown(markdown) {
+    const skills = [];
+
+    // Look for skills section
+    const skillsSection = markdown.match(/skills?[:\s]+([^\n]+)/i);
+    if (skillsSection) {
+        skills.push(...skillsSection[1].split(/[,;]/).map(s => s.trim()).filter(s => s.length > 1 && s.length < 30));
+    }
+
+    // Look for common tech keywords
+    const techKeywords = [
+        'JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'C++', 'Go', 'Rust',
+        'React', 'Vue', 'Angular', 'Node.js', 'Django', 'Flask', 'Spring',
+        'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes',
+        'SQL', 'PostgreSQL', 'MongoDB', 'Redis',
+        'Unity', 'Unreal', 'OpenGL', 'WebGL'
+    ];
+
+    techKeywords.forEach(keyword => {
+        if (new RegExp(`\\b${keyword}\\b`, 'i').test(markdown) && !skills.includes(keyword)) {
+            skills.push(keyword);
+        }
+    });
+
+    return skills.slice(0, 10); // Limit to 10 skills
+}
+```
                 >
                     ×
                 </button>
