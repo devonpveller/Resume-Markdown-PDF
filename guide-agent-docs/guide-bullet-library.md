@@ -20,19 +20,24 @@ This guide provides comprehensive implementation instructions for adding a **Bul
 3. [File Structure](#file-structure)
 4. [Data Model](#data-model)
 5. [Architecture Overview](#architecture-overview)
-6. [Implementation Steps](#implementation-steps)
+6. [Architecture Principles](#architecture-principles)
+   - [SOLID Principles Enforcement](#solid-principles-enforcement)
+   - [Design Patterns Required](#design-patterns-required)
+   - [Encapsulation Strategies](#encapsulation-strategies)
+   - [Code Quality Standards](#code-quality-standards)
+7. [Implementation Steps](#implementation-steps)
    - [Step 1: Storage Path Manager](#step-1-storage-path-manager)
    - [Step 2: Bullet Library Data Store](#step-2-bullet-library-data-store)
    - [Step 3: Header Library Manager](#step-3-header-library-manager)
    - [Step 4: Job Post Manager](#step-4-job-post-manager)
    - [Step 5: Duplicate Detection & Validation](#step-5-duplicate-detection--validation)
-   - [Step 6: Markdown Bullet Parser](#step-6-markdown-bullet-parser)
-   - [Step 7: IPC Handlers in Electron Main Process](#step-7-ipc-handlers-in-electron-main-process)
-   - [Step 8: Preload API Extensions](#step-8-preload-api-extensions)
-   - [Step 9: React Components](#step-9-react-components)
-   - [Step 10: Local AI Integration with Job Context](#step-10-local-ai-integration-with-job-context)
-7. [Testing Checklist](#testing-checklist)
-8. [File Reference](#file-reference)
+   - [Step 6: IPC Handlers in Electron Main Process](#step-6-ipc-handlers-in-electron-main-process)
+   - [Step 7: Preload API Extensions](#step-7-preload-api-extensions)
+   - [Step 8: React Components](#step-8-react-components)
+   - [Step 9: Bullet Library Panel UI](#step-9-bullet-library-panel-ui-with-variant-management)
+   - [Step 10: Local AI Integration](#step-10-local-ai-integration-with-job-context)
+8. [Testing Checklist](#testing-checklist)
+9. [File Reference](#file-reference)
 
 ---
 
@@ -106,6 +111,41 @@ resume-pdf-exporter/                    # app.getPath('userData')
 │   └── ...
 │
 └── ai-settings.json                    # AI endpoint configuration
+```
+
+### Project Source Code Structure
+
+```
+export-to-pdf/
+├── electron/
+│   ├── main.cjs                        # Entry point, IPC handlers (thin orchestration layer)
+│   ├── preload.js                      # Context bridge API definitions
+│   │
+│   ├── managers/                       # Business logic (one class per file) - SOLID SRP
+│   │   ├── index.cjs                   # Re-exports all managers
+│   │   ├── bullet-library-manager.cjs  # Bullet CRUD, variant management
+│   │   ├── header-library-manager.cjs  # Header CRUD
+│   │   └── job-post-manager.cjs        # Job post CRUD, markdown files
+│   │
+│   └── services/                       # Stateless utilities - shared across managers
+│       ├── storage-paths.cjs           # Singleton path resolver (OS-specific)
+│       ├── validation.cjs              # Duplicate detection, similarity, quality checks
+│       └── ai-service.cjs              # AI API integration (optional)
+│
+├── src/
+│   ├── App.jsx                         # Main app component
+│   │
+│   ├── components/                     # React UI components
+│   │   ├── BulletLibraryPanel.jsx      # Main bullet library UI
+│   │   └── JobPostImportModal.jsx      # Job post import modal
+│   │
+│   ├── hooks/                          # React hooks - state management
+│   │   └── useBulletLibrary.js         # Bullet library state & API calls
+│   │
+│   └── services/                       # Frontend utilities (browser-only, no Node.js)
+│       └── bulletParser.js             # Markdown → structured data parser
+│
+└── package.json                        # Dependencies (uuid, etc.)
 ```
 
 ---
@@ -359,6 +399,481 @@ interface JobPost {
 
 ---
 
+## Architecture Principles
+
+### SOLID Principles Enforcement
+
+All implementations MUST adhere to SOLID principles:
+
+#### S - Single Responsibility Principle
+
+Each module handles ONE concern:
+
+| Module | Single Responsibility |
+|--------|----------------------|
+| `storage-paths.cjs` | ONLY resolves OS-specific file paths |
+| `bullet-library-manager.cjs` | ONLY manages bullet CRUD operations |
+| `header-library-manager.cjs` | ONLY manages header CRUD operations |
+| `job-post-manager.cjs` | ONLY manages job post storage/retrieval |
+| `validation.cjs` | ONLY handles duplicate detection & text validation |
+| `bulletParser.js` | ONLY parses markdown → structured data |
+| `BulletLibraryPanel.jsx` | ONLY handles UI rendering & user interactions |
+| `useBulletLibrary.js` | ONLY manages React state & API orchestration |
+
+**Anti-patterns to AVOID:**
+- ❌ Managers that also handle UI state
+- ❌ Parsers that also save data
+- ❌ Components that directly access file system
+- ❌ IPC handlers with business logic (delegate to managers)
+
+#### O - Open/Closed Principle
+
+Modules are open for extension, closed for modification:
+
+```javascript
+// ✅ GOOD: Extensible via configuration/injection
+class BulletLibraryManager {
+    constructor(storagePaths, validator) {
+        this.paths = storagePaths;        // Injected dependency
+        this.validator = validator;        // Injected dependency
+    }
+}
+
+// ❌ BAD: Hardcoded dependencies requiring modification
+class BulletLibraryManager {
+    constructor() {
+        this.paths = new StoragePaths();   // Hardcoded
+        this.validator = new Validation(); // Hardcoded
+    }
+}
+```
+
+**Extension points:**
+- New validation rules → Add to `Validation` class without modifying managers
+- New storage backends → Implement storage interface, inject into managers
+- New AI providers → Configure endpoint in `ai-settings.json`
+
+#### L - Liskov Substitution Principle
+
+All managers implement consistent interfaces:
+
+```typescript
+// All library managers MUST implement this interface
+interface ILibraryManager<T> {
+    load(): T[];
+    save(items: T[]): void;
+    add(item: T): { success: boolean; duplicate: boolean; item?: T };
+    get(id: string): T | null;
+    update(id: string, updates: Partial<T>): T;
+    delete(id: string): boolean;
+}
+```
+
+#### I - Interface Segregation Principle
+
+Clients only depend on interfaces they use:
+
+```javascript
+// ✅ GOOD: Preload exposes ONLY what renderer needs
+contextBridge.exposeInMainWorld('electronAPI', {
+    // Bullet operations (used by BulletLibraryPanel)
+    getBulletLibrary: () => ipcRenderer.invoke('get-bullet-library'),
+    addBullet: (data) => ipcRenderer.invoke('add-bullet', data),
+    
+    // Job post operations (used by JobPostManager)
+    getJobPosts: () => ipcRenderer.invoke('get-job-posts'),
+    addJobPost: (data) => ipcRenderer.invoke('add-job-post', data),
+    
+    // AI operations (used by AI components only)
+    rephraseBulletForJob: (data) => ipcRenderer.invoke('rephrase-bullet-for-job', data)
+});
+
+// ❌ BAD: Exposing internal implementation details
+contextBridge.exposeInMainWorld('electronAPI', {
+    fs: require('fs'),              // Exposes too much
+    path: require('path'),          // Internal concern
+    getStoragePaths: () => paths    // Implementation detail
+});
+```
+
+#### D - Dependency Inversion Principle
+
+High-level modules don't depend on low-level modules:
+
+```javascript
+// ✅ GOOD: IPC handlers depend on abstractions (managers)
+ipcMain.handle('add-bullet', async (event, bulletData) => {
+    const manager = getBulletLibraryManager();  // Factory provides instance
+    return manager.addBullet(bulletData);       // Manager handles details
+});
+
+// ❌ BAD: IPC handlers with inline file operations
+ipcMain.handle('add-bullet', async (event, bulletData) => {
+    const data = JSON.parse(fs.readFileSync(path));  // Low-level
+    data.bullets.push(bulletData);                    // Business logic
+    fs.writeFileSync(path, JSON.stringify(data));     // Low-level
+});
+```
+
+---
+
+### Design Patterns Required
+
+#### 1. Singleton Pattern (Storage Paths)
+
+```javascript
+// storage-paths.cjs - Single instance for consistent path resolution
+let instance = null;
+
+function getStoragePaths() {
+    if (!instance) {
+        instance = new StoragePaths();
+    }
+    return instance;
+}
+
+module.exports = { getStoragePaths };
+```
+
+#### 2. Factory Pattern (Manager Instantiation)
+
+```javascript
+// main.cjs - Lazy initialization with dependency injection
+let bulletLibraryManager = null;
+
+const getBulletLibraryManager = () => {
+    if (!bulletLibraryManager) {
+        const paths = getStoragePaths();
+        const validator = new Validation();
+        bulletLibraryManager = new BulletLibraryManager(paths, validator);
+    }
+    return bulletLibraryManager;
+};
+```
+
+#### 3. Repository Pattern (Data Access)
+
+```javascript
+// All managers follow repository pattern
+class BulletLibraryManager {
+    // Load all entities
+    load() { /* ... */ }
+    
+    // Save all entities
+    save() { /* ... */ }
+    
+    // CRUD operations
+    addBullet(data) { /* ... */ }
+    getBullet(id) { /* ... */ }
+    updateBullet(id, updates) { /* ... */ }
+    deleteBullet(id) { /* ... */ }
+    
+    // Query operations
+    findByHash(hash) { /* ... */ }
+    findBySection(sectionHeader) { /* ... */ }
+}
+```
+
+#### 4. Strategy Pattern (Validation Rules)
+
+```javascript
+// validation.cjs - Pluggable validation strategies
+class Validation {
+    constructor(strategies = []) {
+        this.strategies = [
+            Validation.checkExactDuplicate,
+            Validation.checkSimilarity,
+            Validation.checkQuality,
+            ...strategies  // Custom strategies can be added
+        ];
+    }
+    
+    validate(text, existingBullets) {
+        const results = this.strategies.map(strategy => 
+            strategy(text, existingBullets)
+        );
+        return this.mergeResults(results);
+    }
+    
+    static checkExactDuplicate(text, bullets) { /* ... */ }
+    static checkSimilarity(text, bullets) { /* ... */ }
+    static checkQuality(text) { /* ... */ }
+}
+```
+
+#### 5. Observer Pattern (File Watching)
+
+```javascript
+// React hook observes library changes
+useEffect(() => {
+    const handleLibraryUpdate = (event, data) => {
+        setLibrary(data.library);
+    };
+    
+    window.electronAPI.onLibraryUpdated(handleLibraryUpdate);
+    
+    return () => {
+        window.electronAPI.offLibraryUpdated(handleLibraryUpdate);
+    };
+}, []);
+```
+
+---
+
+### Encapsulation Strategies
+
+#### 1. Module Boundaries
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ PUBLIC API (preload.js)                                          │
+│   Only exposes high-level operations:                           │
+│   getBulletLibrary, addBullet, rephraseBulletForJob, etc.       │
+└─────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ contextBridge (security boundary)
+                              │
+┌─────────────────────────────────────────────────────────────────┐
+│ IPC HANDLERS (main.cjs)                                         │
+│   Thin layer that delegates to managers                         │
+│   NO business logic - only orchestration                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ BulletLibrary   │ │ HeaderLibrary   │ │ JobPost         │
+│ Manager         │ │ Manager         │ │ Manager         │
+│                 │ │                 │ │                 │
+│ Private:        │ │ Private:        │ │ Private:        │
+│ - this.data     │ │ - this.headers  │ │ - this.index    │
+│ - this.hashes   │ │ - this.paths    │ │ - this.paths    │
+│                 │ │                 │ │                 │
+│ Public:         │ │ Public:         │ │ Public:         │
+│ - addBullet()   │ │ - addHeader()   │ │ - addJobPost()  │
+│ - getBullet()   │ │ - getHeader()   │ │ - getJobPost()  │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+          │                   │                   │
+          └───────────────────┼───────────────────┘
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ SHARED UTILITIES                                                │
+│   StoragePaths (singleton) - path resolution                    │
+│   Validation (stateless) - text validation & hashing            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ FILE SYSTEM (Node.js fs)                                        │
+│   Only accessed by managers - NEVER by UI or IPC handlers       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 2. Data Hiding
+
+```javascript
+// ✅ GOOD: Private state with controlled access
+class BulletLibraryManager {
+    #data = null;           // Private field (ES2022)
+    #hashes = new Map();    // Private field
+    
+    constructor(paths, validator) {
+        this.paths = paths;         // Injected, readonly
+        this.validator = validator; // Injected, readonly
+    }
+    
+    // Public method with validation
+    addBullet(bulletData) {
+        this.#ensureLoaded();
+        
+        // Validate through injected validator
+        const validation = this.validator.validate(
+            bulletData.text, 
+            this.#data.bullets
+        );
+        
+        if (validation.isDuplicate) {
+            return { success: false, duplicate: true, existingId: validation.existingId };
+        }
+        
+        const bullet = this.#createBullet(bulletData);
+        this.#data.bullets.push(bullet);
+        this.#registerHash(bullet);
+        this.#save();
+        
+        return { success: true, bullet };
+    }
+    
+    // Private helper methods
+    #ensureLoaded() {
+        if (!this.#data) this.load();
+    }
+    
+    #createBullet(data) { /* ... */ }
+    #registerHash(bullet) { /* ... */ }
+    #save() { /* ... */ }
+}
+```
+
+#### 3. Immutable Data Returns
+
+```javascript
+// ✅ GOOD: Return copies, not references
+getBullet(id) {
+    this.#ensureLoaded();
+    const bullet = this.#data.bullets.find(b => b.id === id);
+    return bullet ? { ...bullet, variants: [...bullet.variants] } : null;
+}
+
+getAllBullets() {
+    this.#ensureLoaded();
+    return this.#data.bullets.map(b => ({ 
+        ...b, 
+        variants: [...b.variants] 
+    }));
+}
+
+// ❌ BAD: Returning internal references
+getBullet(id) {
+    return this.#data.bullets.find(b => b.id === id);  // Exposes internal state
+}
+```
+
+#### 4. Error Boundary Encapsulation
+
+```javascript
+// IPC handlers encapsulate all errors
+ipcMain.handle('add-bullet', async (event, bulletData) => {
+    try {
+        const manager = getBulletLibraryManager();
+        const result = manager.addBullet(bulletData);
+        return { success: true, ...result };
+    } catch (error) {
+        console.error('Error adding bullet:', error);
+        return { 
+            success: false, 
+            error: error.message,
+            code: error.code || 'UNKNOWN_ERROR'
+        };
+    }
+});
+```
+
+---
+
+### Code Quality Standards
+
+#### 1. JSDoc Comments Required
+
+All public methods MUST have JSDoc comments:
+
+```javascript
+/**
+ * Add a new bullet to the library with duplicate checking
+ * 
+ * @param {Object} bulletData - The bullet data to add
+ * @param {string} bulletData.text - The bullet text content
+ * @param {Object} bulletData.parentHeader - Parent header reference
+ * @param {string} bulletData.parentHeader.headerText - Header text
+ * @param {number} bulletData.parentHeader.headerLevel - 2 or 3
+ * @param {string} [bulletData.sourceResume] - Original resume filename
+ * 
+ * @returns {Object} Result object
+ * @returns {boolean} result.success - Whether operation succeeded
+ * @returns {boolean} [result.duplicate] - True if bullet was duplicate
+ * @returns {Object} [result.bullet] - The created bullet if successful
+ * @returns {string} [result.existingId] - ID of existing bullet if duplicate
+ * 
+ * @throws {Error} If bulletData.text is empty or invalid
+ * 
+ * @example
+ * const result = manager.addBullet({
+ *     text: 'Engineered LLM-assisted workflow achieving 5.6x faster load times',
+ *     parentHeader: { headerText: 'Experience', headerLevel: 2 }
+ * });
+ */
+addBullet(bulletData) { /* ... */ }
+```
+
+#### 2. Type Validation at Boundaries
+
+```javascript
+// Validate inputs at public API boundaries
+addBullet(bulletData) {
+    // Type validation
+    if (!bulletData || typeof bulletData !== 'object') {
+        throw new TypeError('bulletData must be an object');
+    }
+    if (!bulletData.text || typeof bulletData.text !== 'string') {
+        throw new TypeError('bulletData.text must be a non-empty string');
+    }
+    if (bulletData.text.trim().length < 10) {
+        throw new Error('Bullet text must be at least 10 characters');
+    }
+    
+    // Proceed with validated data
+    // ...
+}
+```
+
+#### 3. Consistent Return Shapes
+
+All IPC handlers return consistent response shapes:
+
+```typescript
+// Success response
+interface SuccessResponse<T> {
+    success: true;
+    data?: T;
+    message?: string;
+}
+
+// Error response
+interface ErrorResponse {
+    success: false;
+    error: string;
+    code?: string;
+    details?: any;
+}
+
+type IPCResponse<T> = SuccessResponse<T> | ErrorResponse;
+```
+
+#### 4. File Organization
+
+```
+electron/
+├── main.cjs                    # Entry point, IPC handlers (thin layer)
+├── preload.js                  # Context bridge API definitions
+│
+├── managers/                   # Business logic (one class per file)
+│   ├── index.cjs              # Re-exports all managers
+│   ├── bullet-library-manager.cjs
+│   ├── header-library-manager.cjs
+│   └── job-post-manager.cjs
+│
+├── services/                   # Stateless utilities
+│   ├── storage-paths.cjs      # Path resolution singleton
+│   ├── validation.cjs         # Duplicate detection & validation
+│   └── ai-service.cjs         # AI API integration
+│
+└── types/                      # TypeScript definitions (if using TS)
+    └── interfaces.d.ts
+
+src/
+├── components/                 # React UI components
+│   ├── BulletLibraryPanel.jsx
+│   └── JobPostImportModal.jsx
+│
+├── hooks/                      # React hooks
+│   └── useBulletLibrary.js
+│
+└── services/                   # Frontend utilities (no Node.js)
+    └── bulletParser.js
+```
+
+---
+
 ## Implementation Steps
 
 ### Step 1: Storage Path Manager
@@ -494,31 +1009,59 @@ module.exports = { StoragePaths, getStoragePaths };
 
 ### Step 2: Bullet Library Data Store
 
-Create `export-to-pdf/electron/bullet-library-manager.cjs`:
+Create `export-to-pdf/electron/managers/bullet-library-manager.cjs`:
 
 ```javascript
 /**
  * Bullet Library Manager
- * Handles CRUD operations for unified bullet library storage
- * Aggregates bullets from ALL resumes into a single searchable library
+ * 
+ * Handles CRUD operations for unified bullet library storage.
+ * Aggregates bullets from ALL resumes into a single searchable library.
+ * 
+ * SOLID Principles:
+ * - Single Responsibility: ONLY manages bullet storage operations
+ * - Open/Closed: Extensible via injected validator, closed to modification
+ * - Dependency Inversion: Depends on injected StoragePaths and Validation abstractions
+ * 
+ * @class BulletLibraryManager
  */
 const fs = require('fs');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
-const { getStoragePaths } = require('./storage-paths.cjs');
 
 class BulletLibraryManager {
-    constructor() {
-        this.paths = getStoragePaths();
-        this.library = null;
-        this.hashes = null;
+    // Private fields (ES2022) - encapsulated state
+    #library = null;
+    #hashes = null;
+    #paths = null;
+    #validator = null;
+
+    /**
+     * Create a BulletLibraryManager instance
+     * 
+     * @param {Object} storagePaths - Injected StoragePaths instance (Dependency Injection)
+     * @param {Object} [validator] - Optional injected Validation instance
+     * @throws {TypeError} If storagePaths is not provided
+     * 
+     * @example
+     * const manager = new BulletLibraryManager(getStoragePaths(), new Validation());
+     */
+    constructor(storagePaths, validator = null) {
+        if (!storagePaths) {
+            throw new TypeError('storagePaths is required');
+        }
+        this.#paths = storagePaths;
+        this.#validator = validator;
+        
+        // Freeze public interface to prevent modification
+        Object.freeze(this);
     }
 
     // ============================================
-    // CORE LIBRARY OPERATIONS
+    // PRIVATE HELPER METHODS
     // ============================================
 
-    createEmptyLibrary() {
+    #createEmptyLibrary() {
         return {
             version: '1.0.0',
             lastUpdated: new Date().toISOString(),
@@ -527,92 +1070,49 @@ class BulletLibraryManager {
         };
     }
 
-    load() {
-        if (this.library) return this.library;
+    #ensureLoaded() {
+        if (!this.#library) {
+            this.load();
+        }
+    }
 
-        const filePath = this.paths.getBulletsFilePath();
+    #ensureHashesLoaded() {
+        if (!this.#hashes) {
+            this.#loadHashes();
+        }
+    }
+
+    #loadHashes() {
+        const filePath = this.#paths.getValidationHashesPath();
         if (fs.existsSync(filePath)) {
             const data = fs.readFileSync(filePath, 'utf-8');
-            this.library = JSON.parse(data);
+            this.#hashes = JSON.parse(data);
         } else {
-            this.library = this.createEmptyLibrary();
-            this.save();
+            this.#hashes = { version: '1.0.0', hashes: {} };
         }
-        return this.library;
     }
 
-    save() {
-        this.library.lastUpdated = new Date().toISOString();
-        this.library.totalBullets = this.library.bullets.length;
-        const filePath = this.paths.getBulletsFilePath();
-        fs.writeFileSync(filePath, JSON.stringify(this.library, null, 2));
-        this.saveHashes();
-        return this.library;
+    #saveHashes() {
+        const filePath = this.#paths.getValidationHashesPath();
+        fs.writeFileSync(filePath, JSON.stringify(this.#hashes, null, 2));
     }
 
-    // ============================================
-    // HASH-BASED DUPLICATE DETECTION
-    // ============================================
-
-    loadHashes() {
-        if (this.hashes) return this.hashes;
-
-        const filePath = this.paths.getValidationHashesPath();
-        if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath, 'utf-8');
-            this.hashes = JSON.parse(data);
-        } else {
-            this.hashes = { version: '1.0.0', hashes: {} };
-        }
-        return this.hashes;
-    }
-
-    saveHashes() {
-        const filePath = this.paths.getValidationHashesPath();
-        fs.writeFileSync(filePath, JSON.stringify(this.hashes, null, 2));
-    }
-
-    generateHash(text) {
+    #generateHash(text) {
         // Normalize text: lowercase, collapse whitespace, trim
         const normalized = text.trim().toLowerCase().replace(/\s+/g, ' ');
         return crypto.createHash('md5').update(normalized).digest('hex').substring(0, 12);
     }
 
-    isDuplicate(text) {
-        const hash = this.generateHash(text);
-        this.loadHashes();
-        return this.hashes.hashes[hash] || null;
-    }
-
-    registerHash(text, id) {
-        const hash = this.generateHash(text);
-        this.loadHashes();
-        this.hashes.hashes[hash] = id;
+    #registerHash(text, id) {
+        const hash = this.#generateHash(text);
+        this.#ensureHashesLoaded();
+        this.#hashes.hashes[hash] = id;
         return hash;
     }
 
-    // ============================================
-    // BULLET CRUD OPERATIONS
-    // ============================================
-
-    addBullet(bulletData) {
-        this.load();
-        
-        // Check for duplicate
-        const existingId = this.isDuplicate(bulletData.text);
-        if (existingId) {
-            // Update usage count instead of creating duplicate
-            const existing = this.library.bullets.find(b => b.id === existingId);
-            if (existing) {
-                existing.usageCount++;
-                existing.lastUsed = new Date().toISOString();
-                this.save();
-                return { duplicate: true, bullet: existing };
-            }
-        }
-
-        const hash = this.generateHash(bulletData.text);
-        const bullet = {
+    #createBulletEntity(bulletData) {
+        const hash = this.#generateHash(bulletData.text);
+        return {
             id: uuidv4(),
             text: bulletData.text,
             textHash: hash,
@@ -625,63 +1125,247 @@ class BulletLibraryManager {
             tags: bulletData.tags || [],
             variants: []
         };
-
-        this.library.bullets.push(bullet);
-        this.registerHash(bulletData.text, bullet.id);
-        this.save();
-
-        return { duplicate: false, bullet };
     }
 
+    #cloneBullet(bullet) {
+        // Return immutable copy (Encapsulation - don't expose internal refs)
+        return {
+            ...bullet,
+            variants: bullet.variants.map(v => ({ ...v })),
+            tags: [...(bullet.tags || [])]
+        };
+    }
+
+    // ============================================
+    // PUBLIC API - CORE LIBRARY OPERATIONS
+    // ============================================
+
+    /**
+     * Load the bullet library from disk
+     * 
+     * @returns {Object} The loaded library (immutable copy)
+     */
+    load() {
+        const filePath = this.#paths.getBulletsFilePath();
+        if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, 'utf-8');
+            this.#library = JSON.parse(data);
+        } else {
+            this.#library = this.#createEmptyLibrary();
+            this.save();
+        }
+        // Return immutable copy
+        return {
+            ...this.#library,
+            bullets: this.#library.bullets.map(b => this.#cloneBullet(b))
+        };
+    }
+
+    /**
+     * Save the current library state to disk
+     * 
+     * @returns {Object} The saved library metadata
+     */
+    save() {
+        this.#library.lastUpdated = new Date().toISOString();
+        this.#library.totalBullets = this.#library.bullets.length;
+        const filePath = this.#paths.getBulletsFilePath();
+        fs.writeFileSync(filePath, JSON.stringify(this.#library, null, 2));
+        this.#saveHashes();
+        return {
+            lastUpdated: this.#library.lastUpdated,
+            totalBullets: this.#library.totalBullets
+        };
+    }
+
+    // ============================================
+    // PUBLIC API - DUPLICATE DETECTION
+    // ============================================
+
+    /**
+     * Check if text is a duplicate of existing bullet
+     * 
+     * @param {string} text - The text to check
+     * @returns {string|null} The ID of existing bullet if duplicate, null otherwise
+     */
+    isDuplicate(text) {
+        if (!text || typeof text !== 'string') {
+            throw new TypeError('text must be a non-empty string');
+        }
+        const hash = this.#generateHash(text);
+        this.#ensureHashesLoaded();
+        return this.#hashes.hashes[hash] || null;
+    }
+
+    // ============================================
+    // PUBLIC API - BULLET CRUD OPERATIONS
+    // ============================================
+
+    /**
+     * Add a new bullet to the library with duplicate checking
+     * 
+     * @param {Object} bulletData - The bullet data to add
+     * @param {string} bulletData.text - The bullet text content (required, min 10 chars)
+     * @param {Object} [bulletData.parentHeader] - Parent header reference
+     * @param {string} [bulletData.parentHeader.headerText] - Header text
+     * @param {number} [bulletData.parentHeader.headerLevel] - 2 or 3
+     * @param {Object} [bulletData.source] - Source information
+     * @param {string[]} [bulletData.tags] - Tags for categorization
+     * 
+     * @returns {Object} Result object
+     * @returns {boolean} result.duplicate - True if bullet was duplicate
+     * @returns {Object} result.bullet - The created or existing bullet (immutable copy)
+     * 
+     * @throws {TypeError} If bulletData.text is missing or invalid
+     */
+    addBullet(bulletData) {
+        // Input validation (validate at boundaries)
+        if (!bulletData || typeof bulletData !== 'object') {
+            throw new TypeError('bulletData must be an object');
+        }
+        if (!bulletData.text || typeof bulletData.text !== 'string') {
+            throw new TypeError('bulletData.text must be a non-empty string');
+        }
+        if (bulletData.text.trim().length < 10) {
+            throw new Error('Bullet text must be at least 10 characters');
+        }
+
+        this.#ensureLoaded();
+        
+        // Check for duplicate
+        const existingId = this.isDuplicate(bulletData.text);
+        if (existingId) {
+            // Update usage count instead of creating duplicate
+            const existing = this.#library.bullets.find(b => b.id === existingId);
+            if (existing) {
+                existing.usageCount++;
+                existing.lastUsed = new Date().toISOString();
+                this.save();
+                return { duplicate: true, bullet: this.#cloneBullet(existing) };
+            }
+        }
+
+        const bullet = this.#createBulletEntity(bulletData);
+        this.#library.bullets.push(bullet);
+        this.#registerHash(bulletData.text, bullet.id);
+        this.save();
+
+        return { duplicate: false, bullet: this.#cloneBullet(bullet) };
+    }
+
+    /**
+     * Get a bullet by ID
+     * 
+     * @param {string} bulletId - The bullet ID
+     * @returns {Object|null} The bullet (immutable copy) or null if not found
+     */
     getBullet(bulletId) {
-        this.load();
-        return this.library.bullets.find(b => b.id === bulletId);
+        if (!bulletId || typeof bulletId !== 'string') {
+            throw new TypeError('bulletId must be a non-empty string');
+        }
+        this.#ensureLoaded();
+        const bullet = this.#library.bullets.find(b => b.id === bulletId);
+        return bullet ? this.#cloneBullet(bullet) : null;
     }
 
+    /**
+     * Get all bullets in the library
+     * 
+     * @returns {Object[]} Array of bullets (immutable copies)
+     */
+    getAllBullets() {
+        this.#ensureLoaded();
+        return this.#library.bullets.map(b => this.#cloneBullet(b));
+    }
+
+    /**
+     * Update a bullet by ID
+     * 
+     * @param {string} bulletId - The bullet ID
+     * @param {Object} updates - Fields to update
+     * @returns {Object} The updated bullet (immutable copy)
+     * @throws {Error} If bullet not found
+     */
     updateBullet(bulletId, updates) {
-        this.load();
-        const bullet = this.library.bullets.find(b => b.id === bulletId);
-        if (!bullet) throw new Error(`Bullet not found: ${bulletId}`);
+        if (!bulletId || typeof bulletId !== 'string') {
+            throw new TypeError('bulletId must be a non-empty string');
+        }
+        this.#ensureLoaded();
+        const bullet = this.#library.bullets.find(b => b.id === bulletId);
+        if (!bullet) {
+            throw new Error(`Bullet not found: ${bulletId}`);
+        }
 
-        Object.assign(bullet, updates, { updatedAt: new Date().toISOString() });
+        // Only allow safe updates (encapsulation)
+        const safeUpdates = {};
+        if (updates.tags) safeUpdates.tags = [...updates.tags];
+        if (updates.parentHeader) safeUpdates.parentHeader = { ...updates.parentHeader };
+        
+        Object.assign(bullet, safeUpdates, { updatedAt: new Date().toISOString() });
         this.save();
-        return bullet;
+        return this.#cloneBullet(bullet);
     }
 
+    /**
+     * Delete a bullet by ID
+     * 
+     * @param {string} bulletId - The bullet ID
+     * @returns {boolean} True if deleted
+     * @throws {Error} If bullet not found
+     */
     deleteBullet(bulletId) {
-        this.load();
-        const index = this.library.bullets.findIndex(b => b.id === bulletId);
-        if (index === -1) throw new Error(`Bullet not found: ${bulletId}`);
+        if (!bulletId || typeof bulletId !== 'string') {
+            throw new TypeError('bulletId must be a non-empty string');
+        }
+        this.#ensureLoaded();
+        const index = this.#library.bullets.findIndex(b => b.id === bulletId);
+        if (index === -1) {
+            throw new Error(`Bullet not found: ${bulletId}`);
+        }
 
-        const bullet = this.library.bullets[index];
+        const bullet = this.#library.bullets[index];
         
         // Remove from hash index
-        this.loadHashes();
-        delete this.hashes.hashes[bullet.textHash];
-        bullet.variants.forEach(v => delete this.hashes.hashes[v.textHash]);
+        this.#ensureHashesLoaded();
+        delete this.#hashes.hashes[bullet.textHash];
+        bullet.variants.forEach(v => delete this.#hashes.hashes[v.textHash]);
 
-        this.library.bullets.splice(index, 1);
+        this.#library.bullets.splice(index, 1);
         this.save();
         return true;
     }
 
     // ============================================
-    // VARIANT OPERATIONS
+    // PUBLIC API - VARIANT OPERATIONS
     // ============================================
 
     /**
      * Add a pending variant (not yet accepted by user)
+     * 
+     * @param {string} bulletId - Parent bullet ID
+     * @param {string} variantText - The variant text
+     * @param {string} source - Source type ('ai-rephrase' | 'manual' | 'imported')
+     * @param {string} [model] - AI model used if source is 'ai-rephrase'
+     * @param {string} [jobPostRef] - Job post ID if relevant
+     * 
+     * @returns {Object} Result with duplicate flag and variant
      */
     addPendingVariant(bulletId, variantText, source, model = null, jobPostRef = null) {
-        this.load();
-        const bullet = this.library.bullets.find(b => b.id === bulletId);
-        if (!bullet) throw new Error(`Bullet not found: ${bulletId}`);
+        if (!bulletId || !variantText) {
+            throw new TypeError('bulletId and variantText are required');
+        }
+        
+        this.#ensureLoaded();
+        const bullet = this.#library.bullets.find(b => b.id === bulletId);
+        if (!bullet) {
+            throw new Error(`Bullet not found: ${bulletId}`);
+        }
 
         // Check if this exact variant already exists
-        const variantHash = this.generateHash(variantText);
+        const variantHash = this.#generateHash(variantText);
         const existingVariant = bullet.variants.find(v => v.textHash === variantHash);
         if (existingVariant) {
-            return { duplicate: true, variant: existingVariant };
+            return { duplicate: true, variant: { ...existingVariant } };
         }
 
         const variant = {
@@ -699,40 +1383,56 @@ class BulletLibraryManager {
         bullet.variants.push(variant);
         this.save();
 
-        return { duplicate: false, variant };
+        return { duplicate: false, variant: { ...variant } };
     }
 
     /**
-     * Accept a variant - registers it in hash index
+     * Accept a variant - registers it in hash index for duplicate detection
+     * 
+     * @param {string} bulletId - Parent bullet ID
+     * @param {string} variantId - Variant ID to accept
+     * @returns {Object} The accepted variant (immutable copy)
      */
     acceptVariant(bulletId, variantId) {
-        this.load();
-        const bullet = this.library.bullets.find(b => b.id === bulletId);
-        if (!bullet) throw new Error(`Bullet not found: ${bulletId}`);
+        this.#ensureLoaded();
+        const bullet = this.#library.bullets.find(b => b.id === bulletId);
+        if (!bullet) {
+            throw new Error(`Bullet not found: ${bulletId}`);
+        }
 
         const variant = bullet.variants.find(v => v.id === variantId);
-        if (!variant) throw new Error(`Variant not found: ${variantId}`);
+        if (!variant) {
+            throw new Error(`Variant not found: ${variantId}`);
+        }
 
         variant.accepted = true;
         variant.acceptedAt = new Date().toISOString();
 
         // Register in hash index once accepted
-        this.registerHash(variant.text, variant.id);
+        this.#registerHash(variant.text, variant.id);
         this.save();
 
-        return variant;
+        return { ...variant };
     }
 
     /**
      * Reject and remove a variant
+     * 
+     * @param {string} bulletId - Parent bullet ID
+     * @param {string} variantId - Variant ID to reject
+     * @returns {boolean} True if removed
      */
     rejectVariant(bulletId, variantId) {
-        this.load();
-        const bullet = this.library.bullets.find(b => b.id === bulletId);
-        if (!bullet) throw new Error(`Bullet not found: ${bulletId}`);
+        this.#ensureLoaded();
+        const bullet = this.#library.bullets.find(b => b.id === bulletId);
+        if (!bullet) {
+            throw new Error(`Bullet not found: ${bulletId}`);
+        }
 
         const index = bullet.variants.findIndex(v => v.id === variantId);
-        if (index === -1) throw new Error(`Variant not found: ${variantId}`);
+        if (index === -1) {
+            throw new Error(`Variant not found: ${variantId}`);
+        }
 
         bullet.variants.splice(index, 1);
         this.save();
@@ -741,44 +1441,72 @@ class BulletLibraryManager {
     }
 
     // ============================================
-    // QUERY OPERATIONS
+    // PUBLIC API - QUERY OPERATIONS
     // ============================================
 
-    getAllBullets() {
-        this.load();
-        return this.library.bullets;
-    }
-
+    /**
+     * Get bullets by parent header ID
+     * 
+     * @param {string} headerId - The header ID to filter by
+     * @returns {Object[]} Array of matching bullets (immutable copies)
+     */
     getBulletsByHeader(headerId) {
-        this.load();
-        return this.library.bullets.filter(b => 
-            b.parentHeader && b.parentHeader.headerId === headerId
-        );
+        this.#ensureLoaded();
+        return this.#library.bullets
+            .filter(b => b.parentHeader && b.parentHeader.headerId === headerId)
+            .map(b => this.#cloneBullet(b));
     }
 
+    /**
+     * Get bullets by section name
+     * 
+     * @param {string} sectionName - Section name to filter by
+     * @returns {Object[]} Array of matching bullets (immutable copies)
+     */
     getBulletsBySection(sectionName) {
-        this.load();
-        return this.library.bullets.filter(b => 
-            b.parentHeader && (
-                b.parentHeader.headerText === sectionName ||
-                b.parentHeader.sectionHeader === sectionName
+        this.#ensureLoaded();
+        return this.#library.bullets
+            .filter(b => 
+                b.parentHeader && (
+                    b.parentHeader.headerText === sectionName ||
+                    b.parentHeader.sectionHeader === sectionName
+                )
             )
-        );
+            .map(b => this.#cloneBullet(b));
     }
 
+    /**
+     * Search bullets by query text
+     * 
+     * @param {string} query - Search query
+     * @returns {Object[]} Matching bullets (immutable copies)
+     */
     searchBullets(query) {
-        this.load();
+        if (!query || typeof query !== 'string') {
+            throw new TypeError('query must be a non-empty string');
+        }
+        this.#ensureLoaded();
         const lowerQuery = query.toLowerCase();
-        return this.library.bullets.filter(b => 
-            b.text.toLowerCase().includes(lowerQuery) ||
-            b.tags.some(t => t.toLowerCase().includes(lowerQuery))
-        );
+        return this.#library.bullets
+            .filter(b => 
+                b.text.toLowerCase().includes(lowerQuery) ||
+                b.tags.some(t => t.toLowerCase().includes(lowerQuery))
+            )
+            .map(b => this.#cloneBullet(b));
     }
 
     /**
      * Import bullets from a resume file
+     * 
+     * @param {Object[]} parsedBullets - Array of parsed bullets from bulletParser
+     * @param {string} resumeFilename - Source resume filename
+     * @returns {Object} Import results { added, duplicates, bullets }
      */
     importFromResume(parsedBullets, resumeFilename) {
+        if (!Array.isArray(parsedBullets)) {
+            throw new TypeError('parsedBullets must be an array');
+        }
+        
         const results = { added: 0, duplicates: 0, bullets: [] };
 
         parsedBullets.forEach(parsed => {
@@ -821,24 +1549,47 @@ module.exports = BulletLibraryManager;
 
 ### Step 3: Header Library Manager
 
-Create `export-to-pdf/electron/header-library-manager.cjs`:
+Create `export-to-pdf/electron/managers/header-library-manager.cjs`:
 
 ```javascript
 /**
  * Header Library Manager
- * Stores and manages reusable section headers (h2/h3) across resumes
+ * 
+ * Stores and manages reusable section headers (h2/h3) across resumes.
+ * 
+ * SOLID Principles:
+ * - Single Responsibility: ONLY manages header storage operations
+ * - Dependency Inversion: Depends on injected StoragePaths abstraction
+ * 
+ * @class HeaderLibraryManager
  */
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { getStoragePaths } = require('./storage-paths.cjs');
 
 class HeaderLibraryManager {
-    constructor() {
-        this.paths = getStoragePaths();
-        this.library = null;
+    // Private fields (ES2022)
+    #library = null;
+    #paths = null;
+
+    /**
+     * Create a HeaderLibraryManager instance
+     * 
+     * @param {Object} storagePaths - Injected StoragePaths instance
+     * @throws {TypeError} If storagePaths is not provided
+     */
+    constructor(storagePaths) {
+        if (!storagePaths) {
+            throw new TypeError('storagePaths is required');
+        }
+        this.#paths = storagePaths;
+        Object.freeze(this);
     }
 
-    createEmptyLibrary() {
+    // ============================================
+    // PRIVATE HELPER METHODS
+    // ============================================
+
+    #createEmptyLibrary() {
         return {
             version: '1.0.0',
             lastUpdated: new Date().toISOString(),
@@ -846,35 +1597,71 @@ class HeaderLibraryManager {
         };
     }
 
-    load() {
-        if (this.library) return this.library;
-
-        const filePath = this.paths.getHeadersFilePath();
-        if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath, 'utf-8');
-            this.library = JSON.parse(data);
-        } else {
-            this.library = this.createEmptyLibrary();
-            this.save();
+    #ensureLoaded() {
+        if (!this.#library) {
+            this.load();
         }
-        return this.library;
     }
 
+    #cloneHeader(header) {
+        return { ...header };
+    }
+
+    // ============================================
+    // PUBLIC API - CORE OPERATIONS
+    // ============================================
+
+    /**
+     * Load the header library from disk
+     * @returns {Object} Library with headers (immutable copy)
+     */
+    load() {
+        const filePath = this.#paths.getHeadersFilePath();
+        if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, 'utf-8');
+            this.#library = JSON.parse(data);
+        } else {
+            this.#library = this.#createEmptyLibrary();
+            this.save();
+        }
+        return {
+            ...this.#library,
+            headers: this.#library.headers.map(h => this.#cloneHeader(h))
+        };
+    }
+
+    /**
+     * Save the library to disk
+     * @returns {Object} Save metadata
+     */
     save() {
-        this.library.lastUpdated = new Date().toISOString();
-        const filePath = this.paths.getHeadersFilePath();
-        fs.writeFileSync(filePath, JSON.stringify(this.library, null, 2));
-        return this.library;
+        this.#library.lastUpdated = new Date().toISOString();
+        const filePath = this.#paths.getHeadersFilePath();
+        fs.writeFileSync(filePath, JSON.stringify(this.#library, null, 2));
+        return { lastUpdated: this.#library.lastUpdated };
     }
 
     /**
      * Add or update a header in the library
+     * 
+     * @param {Object} headerData - Header data
+     * @param {string} headerData.text - Header text
+     * @param {number} headerData.level - 2 or 3
+     * @param {string} [headerData.parentHeaderId] - Parent h2 ID for h3 headers
+     * @param {string} [headerData.dateRange] - Optional date range text
+     * @param {string} [headerData.subtitle] - Optional subtitle
+     * 
+     * @returns {Object} Result with duplicate flag and header
      */
     addHeader(headerData) {
-        this.load();
+        if (!headerData?.text || !headerData?.level) {
+            throw new TypeError('headerData.text and headerData.level are required');
+        }
+        
+        this.#ensureLoaded();
 
         // Check for existing header with same text and level
-        const existing = this.library.headers.find(h => 
+        const existing = this.#library.headers.find(h => 
             h.text === headerData.text && h.level === headerData.level
         );
 
@@ -884,7 +1671,7 @@ class HeaderLibraryManager {
             if (headerData.dateRange) existing.dateRange = headerData.dateRange;
             if (headerData.subtitle) existing.subtitle = headerData.subtitle;
             this.save();
-            return { duplicate: true, header: existing };
+            return { duplicate: true, header: this.#cloneHeader(existing) };
         }
 
         const header = {
@@ -898,51 +1685,83 @@ class HeaderLibraryManager {
             createdAt: new Date().toISOString()
         };
 
-        this.library.headers.push(header);
+        this.#library.headers.push(header);
         this.save();
 
-        return { duplicate: false, header };
+        return { duplicate: false, header: this.#cloneHeader(header) };
     }
 
+    /**
+     * Get a header by ID
+     * @param {string} headerId - Header ID
+     * @returns {Object|null} Header (immutable copy) or null
+     */
     getHeader(headerId) {
-        this.load();
-        return this.library.headers.find(h => h.id === headerId);
+        this.#ensureLoaded();
+        const header = this.#library.headers.find(h => h.id === headerId);
+        return header ? this.#cloneHeader(header) : null;
     }
 
+    /**
+     * Get all headers
+     * @returns {Object[]} All headers (immutable copies)
+     */
     getAllHeaders() {
-        this.load();
-        return this.library.headers;
+        this.#ensureLoaded();
+        return this.#library.headers.map(h => this.#cloneHeader(h));
     }
 
+    /**
+     * Get headers by level
+     * @param {number} level - 2 or 3
+     * @returns {Object[]} Matching headers (immutable copies)
+     */
     getHeadersByLevel(level) {
-        this.load();
-        return this.library.headers.filter(h => h.level === level);
+        this.#ensureLoaded();
+        return this.#library.headers
+            .filter(h => h.level === level)
+            .map(h => this.#cloneHeader(h));
     }
 
     /**
      * Get h3 headers under a specific h2 parent
+     * @param {string} parentHeaderId - Parent header ID
+     * @returns {Object[]} Sub-headers (immutable copies)
      */
     getSubHeaders(parentHeaderId) {
-        this.load();
-        return this.library.headers.filter(h => h.parentHeaderId === parentHeaderId);
+        this.#ensureLoaded();
+        return this.#library.headers
+            .filter(h => h.parentHeaderId === parentHeaderId)
+            .map(h => this.#cloneHeader(h));
     }
 
+    /**
+     * Delete a header by ID
+     * @param {string} headerId - Header ID
+     * @returns {boolean} True if deleted
+     */
     deleteHeader(headerId) {
-        this.load();
-        const index = this.library.headers.findIndex(h => h.id === headerId);
-        if (index === -1) throw new Error(`Header not found: ${headerId}`);
+        this.#ensureLoaded();
+        const index = this.#library.headers.findIndex(h => h.id === headerId);
+        if (index === -1) {
+            throw new Error(`Header not found: ${headerId}`);
+        }
 
-        this.library.headers.splice(index, 1);
+        this.#library.headers.splice(index, 1);
         this.save();
         return true;
     }
 
     /**
      * Generate markdown for a header
+     * @param {string} headerId - Header ID
+     * @returns {string} Markdown string
      */
     generateMarkdown(headerId) {
         const header = this.getHeader(headerId);
-        if (!header) throw new Error(`Header not found: ${headerId}`);
+        if (!header) {
+            throw new Error(`Header not found: ${headerId}`);
+        }
 
         const prefix = '#'.repeat(header.level);
         let markdown = `${prefix} ${header.text}`;
@@ -1001,55 +1820,75 @@ module.exports = HeaderLibraryManager;
 
 ### Step 4: Job Post Manager
 
-Create `export-to-pdf/electron/job-post-manager.cjs`:
+Create `export-to-pdf/electron/managers/job-post-manager.cjs`:
 
 ```javascript
 /**
  * Job Post Manager
- * Stores and manages job postings as markdown files for AI context
+ * 
+ * Stores and manages job postings as markdown files for AI context.
+ * 
+ * SOLID Principles:
+ * - Single Responsibility: ONLY manages job post storage operations
+ * - Dependency Inversion: Depends on injected StoragePaths and Validation abstractions
+ * 
+ * @class JobPostManager
  */
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const { getStoragePaths } = require('./storage-paths.cjs');
 
 class JobPostManager {
-    constructor() {
-        this.paths = getStoragePaths();
-        this.index = null;
+    // Private fields (ES2022)
+    #index = null;
+    #paths = null;
+    #validator = null;
+
+    /**
+     * Create a JobPostManager instance
+     * 
+     * @param {Object} storagePaths - Injected StoragePaths instance
+     * @param {Object} [validator] - Optional injected Validation instance
+     * @throws {TypeError} If storagePaths is not provided
+     */
+    constructor(storagePaths, validator = null) {
+        if (!storagePaths) {
+            throw new TypeError('storagePaths is required');
+        }
+        this.#paths = storagePaths;
+        this.#validator = validator;
+        Object.freeze(this);
     }
 
-    createEmptyIndex() {
+    // ============================================
+    // PRIVATE HELPER METHODS
+    // ============================================
+
+    #createEmptyIndex() {
         return {
             version: '1.0.0',
             posts: []
         };
     }
 
-    loadIndex() {
-        if (this.index) return this.index;
-
-        const filePath = this.paths.getJobPostIndexPath();
-        if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath, 'utf-8');
-            this.index = JSON.parse(data);
-        } else {
-            this.index = this.createEmptyIndex();
-            this.saveIndex();
+    #ensureIndexLoaded() {
+        if (!this.#index) {
+            this.loadIndex();
         }
-        return this.index;
     }
 
-    saveIndex() {
-        const filePath = this.paths.getJobPostIndexPath();
-        fs.writeFileSync(filePath, JSON.stringify(this.index, null, 2));
-        return this.index;
+    #clonePost(post) {
+        return {
+            ...post,
+            keySkills: [...(post.keySkills || [])]
+        };
     }
 
     /**
      * Generate a safe filename from job title and company
+     * @private
      */
-    generateFilename(company, title) {
+    #generateFilename(company, title) {
         const slug = `${company}-${title}`
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
@@ -1060,24 +1899,74 @@ class JobPostManager {
         return `${slug}-${date}.md`;
     }
 
+    // ============================================
+    // PUBLIC API - INDEX OPERATIONS
+    // ============================================
+
+    /**
+     * Load the job post index
+     * @returns {Object} Index with posts array (immutable copy)
+     */
+    loadIndex() {
+        const filePath = this.#paths.getJobPostIndexPath();
+        if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, 'utf-8');
+            this.#index = JSON.parse(data);
+        } else {
+            this.#index = this.#createEmptyIndex();
+            this.saveIndex();
+        }
+        return {
+            ...this.#index,
+            posts: this.#index.posts.map(p => this.#clonePost(p))
+        };
+    }
+
+    /**
+     * Save the index to disk
+     * @returns {Object} Save metadata
+     */
+    saveIndex() {
+        const filePath = this.#paths.getJobPostIndexPath();
+        fs.writeFileSync(filePath, JSON.stringify(this.#index, null, 2));
+        return { saved: true };
+    }
+
+    // ============================================
+    // PUBLIC API - JOB POST CRUD
+    // ============================================
+
     /**
      * Add a new job post
+     * 
+     * @param {Object} postData - Job post data
+     * @param {string} postData.title - Job title
+     * @param {string} postData.company - Company name
+     * @param {string} [postData.description] - Job description markdown
+     * @param {string[]} [postData.keySkills] - Key skills
+     * @param {string} [postData.url] - Job posting URL
+     * 
+     * @returns {Object} Created post (immutable copy)
      */
     addJobPost(postData) {
-        this.loadIndex();
+        if (!postData?.title || !postData?.company) {
+            throw new TypeError('postData.title and postData.company are required');
+        }
+        
+        this.#ensureIndexLoaded();
 
-        const filename = this.generateFilename(postData.company, postData.title);
+        const filename = this.#generateFilename(postData.company, postData.title);
         const id = filename.replace('.md', '');
 
         // Check for existing post with same id
-        const existing = this.index.posts.find(p => p.id === id);
+        const existing = this.#index.posts.find(p => p.id === id);
         if (existing) {
             throw new Error(`Job post already exists: ${id}`);
         }
 
         // Create markdown file
-        const markdown = this.generateJobPostMarkdown(postData);
-        const filePath = this.paths.getJobPostFilePath(filename);
+        const markdown = this.#generateJobPostMarkdown(postData);
+        const filePath = this.#paths.getJobPostFilePath(filename);
         fs.writeFileSync(filePath, markdown);
 
         // Add to index
@@ -1092,16 +1981,17 @@ class JobPostManager {
             keySkills: postData.keySkills || []
         };
 
-        this.index.posts.push(post);
+        this.#index.posts.push(post);
         this.saveIndex();
 
-        return post;
+        return this.#clonePost(post);
     }
 
     /**
      * Generate markdown for job post storage
+     * @private
      */
-    generateJobPostMarkdown(postData) {
+    #generateJobPostMarkdown(postData) {
         return `# ${postData.title}
 
 **Company:** ${postData.company}
@@ -1129,64 +2019,99 @@ ${postData.notes || ''}
 `;
     }
 
+    /**
+     * Get a job post by ID with content
+     * 
+     * @param {string} postId - Post ID
+     * @returns {Object|null} Post with content (immutable copy) or null
+     */
     getJobPost(postId) {
-        this.loadIndex();
-        const post = this.index.posts.find(p => p.id === postId);
+        this.#ensureIndexLoaded();
+        const post = this.#index.posts.find(p => p.id === postId);
         if (!post) return null;
 
+        const cloned = this.#clonePost(post);
+
         // Load markdown content
-        const filePath = this.paths.getJobPostFilePath(post.filename);
+        const filePath = this.#paths.getJobPostFilePath(post.filename);
         if (fs.existsSync(filePath)) {
-            post.content = fs.readFileSync(filePath, 'utf-8');
+            cloned.content = fs.readFileSync(filePath, 'utf-8');
         }
 
-        return post;
+        return cloned;
     }
 
+    /**
+     * Get all job posts
+     * @returns {Object[]} All posts (immutable copies)
+     */
     getAllJobPosts() {
-        this.loadIndex();
-        return this.index.posts;
+        this.#ensureIndexLoaded();
+        return this.#index.posts.map(p => this.#clonePost(p));
     }
 
+    /**
+     * Get active job posts only
+     * @returns {Object[]} Active posts (immutable copies)
+     */
     getActiveJobPosts() {
-        this.loadIndex();
-        return this.index.posts.filter(p => p.status === 'active');
+        this.#ensureIndexLoaded();
+        return this.#index.posts
+            .filter(p => p.status === 'active')
+            .map(p => this.#clonePost(p));
     }
 
+    /**
+     * Update a job post
+     * 
+     * @param {string} postId - Post ID
+     * @param {Object} updates - Fields to update
+     * @returns {Object} Updated post (immutable copy)
+     */
     updateJobPost(postId, updates) {
-        this.loadIndex();
-        const post = this.index.posts.find(p => p.id === postId);
-        if (!post) throw new Error(`Job post not found: ${postId}`);
+        this.#ensureIndexLoaded();
+        const post = this.#index.posts.find(p => p.id === postId);
+        if (!post) {
+            throw new Error(`Job post not found: ${postId}`);
+        }
 
-        // Update index fields
+        // Only allow safe updates (encapsulation)
         if (updates.status) post.status = updates.status;
-        if (updates.keySkills) post.keySkills = updates.keySkills;
+        if (updates.keySkills) post.keySkills = [...updates.keySkills];
         if (updates.url) post.url = updates.url;
 
         // Update markdown content if provided
         if (updates.content) {
-            const filePath = this.paths.getJobPostFilePath(post.filename);
+            const filePath = this.#paths.getJobPostFilePath(post.filename);
             fs.writeFileSync(filePath, updates.content);
         }
 
         this.saveIndex();
-        return post;
+        return this.#clonePost(post);
     }
 
+    /**
+     * Delete a job post
+     * 
+     * @param {string} postId - Post ID
+     * @returns {boolean} True if deleted
+     */
     deleteJobPost(postId) {
-        this.loadIndex();
-        const index = this.index.posts.findIndex(p => p.id === postId);
-        if (index === -1) throw new Error(`Job post not found: ${postId}`);
+        this.#ensureIndexLoaded();
+        const index = this.#index.posts.findIndex(p => p.id === postId);
+        if (index === -1) {
+            throw new Error(`Job post not found: ${postId}`);
+        }
 
-        const post = this.index.posts[index];
+        const post = this.#index.posts[index];
 
         // Delete markdown file
-        const filePath = this.paths.getJobPostFilePath(post.filename);
+        const filePath = this.#paths.getJobPostFilePath(post.filename);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
 
-        this.index.posts.splice(index, 1);
+        this.#index.posts.splice(index, 1);
         this.saveIndex();
 
         return true;
@@ -1194,15 +2119,20 @@ ${postData.notes || ''}
 
     /**
      * Extract key information from job post for AI context
+     * 
+     * @param {string} postId - Post ID
+     * @returns {Object} Job context { title, company, keySkills, content }
      */
     getJobContext(postId) {
         const post = this.getJobPost(postId);
-        if (!post) throw new Error(`Job post not found: ${postId}`);
+        if (!post) {
+            throw new Error(`Job post not found: ${postId}`);
+        }
 
         return {
             title: post.title,
             company: post.company,
-            keySkills: post.keySkills,
+            keySkills: [...post.keySkills],
             content: post.content
         };
     }
@@ -1215,26 +2145,46 @@ module.exports = JobPostManager;
 
 ### Step 5: Duplicate Detection & Validation
 
-Create `export-to-pdf/electron/validation.cjs`:
+Create `export-to-pdf/electron/services/validation.cjs`:
 
 ```javascript
 /**
- * Validation Module
- * Handles duplicate detection, text similarity, and bullet quality checks
+ * Validation Service
+ * 
+ * Stateless utility for duplicate detection, text similarity, and quality checks.
+ * 
+ * SOLID Principles:
+ * - Single Responsibility: ONLY handles validation logic
+ * - Open/Closed: Extensible via validation strategies
+ * - Stateless: Can be shared across managers without side effects
+ * 
+ * Design Pattern: Strategy Pattern for pluggable validation rules
+ * 
+ * @class Validation
  */
 const crypto = require('crypto');
 
 class Validation {
     /**
      * Generate normalized hash for text comparison
+     * 
+     * @param {string} text - Text to hash
+     * @returns {string} 12-character MD5 hash
      */
     static generateHash(text) {
+        if (!text || typeof text !== 'string') {
+            throw new TypeError('text must be a non-empty string');
+        }
         const normalized = text.trim().toLowerCase().replace(/\s+/g, ' ');
         return crypto.createHash('md5').update(normalized).digest('hex').substring(0, 12);
     }
 
     /**
      * Calculate Levenshtein distance between two strings
+     * 
+     * @param {string} str1 - First string
+     * @param {string} str2 - Second string
+     * @returns {number} Edit distance
      */
     static levenshteinDistance(str1, str2) {
         const m = str1.length;
@@ -1540,45 +2490,121 @@ export function analyzeBulletQuality(bulletText) {
 Add to `export-to-pdf/electron/main.cjs` (at top with other requires):
 
 ```javascript
-// Add at top with other requires
-const { getStoragePaths } = require('./storage-paths.cjs');
-const BulletLibraryManager = require('./bullet-library-manager.cjs');
-const HeaderLibraryManager = require('./header-library-manager.cjs');
-const JobPostManager = require('./job-post-manager.cjs');
-const Validation = require('./validation.cjs');
+/**
+ * Manager Module Imports and Factory Functions
+ * 
+ * Follows Factory Pattern with Dependency Injection for testability
+ * and adherence to Dependency Inversion Principle (SOLID - D)
+ */
+const { getStoragePaths } = require('./services/storage-paths.cjs');
+const BulletLibraryManager = require('./managers/bullet-library-manager.cjs');
+const HeaderLibraryManager = require('./managers/header-library-manager.cjs');
+const JobPostManager = require('./managers/job-post-manager.cjs');
+const Validation = require('./services/validation.cjs');
 
-// Singleton instances
+// ============================================
+// FACTORY FUNCTIONS (Singleton + Dependency Injection)
+// ============================================
+
+/** @type {BulletLibraryManager|null} */
 let bulletLibraryManager = null;
+
+/** @type {HeaderLibraryManager|null} */
 let headerLibraryManager = null;
+
+/** @type {JobPostManager|null} */
 let jobPostManager = null;
 
+/** @type {Validation|null} */
+let validationService = null;
+
+/**
+ * Get or create the Validation service instance
+ * @returns {Validation}
+ */
+const getValidationService = () => {
+    if (!validationService) {
+        validationService = new Validation();
+    }
+    return validationService;
+};
+
+/**
+ * Get or create the BulletLibraryManager instance
+ * Uses Factory Pattern with injected dependencies
+ * 
+ * @returns {BulletLibraryManager}
+ */
 const getBulletLibraryManager = () => {
     if (!bulletLibraryManager) {
-        bulletLibraryManager = new BulletLibraryManager();
+        // Dependency Injection: inject paths and validator
+        const paths = getStoragePaths();
+        const validator = getValidationService();
+        bulletLibraryManager = new BulletLibraryManager(paths, validator);
     }
     return bulletLibraryManager;
 };
 
+/**
+ * Get or create the HeaderLibraryManager instance
+ * @returns {HeaderLibraryManager}
+ */
 const getHeaderLibraryManager = () => {
     if (!headerLibraryManager) {
-        headerLibraryManager = new HeaderLibraryManager();
+        const paths = getStoragePaths();
+        headerLibraryManager = new HeaderLibraryManager(paths);
     }
     return headerLibraryManager;
 };
 
+/**
+ * Get or create the JobPostManager instance
+ * @returns {JobPostManager}
+ */
 const getJobPostManager = () => {
     if (!jobPostManager) {
-        jobPostManager = new JobPostManager();
+        const paths = getStoragePaths();
+        const validator = getValidationService();
+        jobPostManager = new JobPostManager(paths, validator);
     }
     return jobPostManager;
 };
+
+/**
+ * Reset all manager instances (useful for testing)
+ * @internal
+ */
+const resetManagers = () => {
+    bulletLibraryManager = null;
+    headerLibraryManager = null;
+    jobPostManager = null;
+    validationService = null;
+};
+
+// Export for testing (optional)
+if (process.env.NODE_ENV === 'test') {
+    module.exports = { 
+        getBulletLibraryManager, 
+        getHeaderLibraryManager, 
+        getJobPostManager,
+        resetManagers 
+    };
+}
 ```
 
-Add these IPC handlers after existing `ipcMain.handle` blocks:
+Add these IPC handlers after existing `ipcMain.handle` blocks.
+
+**Note:** IPC handlers are thin orchestration layers that delegate to managers. They handle ONLY:
+- Error wrapping (try/catch)
+- Response shaping ({ success, data, error })
+- Logging
+
+Business logic stays in managers (Single Responsibility Principle).
 
 ```javascript
 // ============================================
 // BULLET LIBRARY IPC HANDLERS
+// Thin layer - delegates all logic to manager
 // ============================================
 
 ipcMain.handle('get-bullet-library', async () => {
@@ -1588,7 +2614,7 @@ ipcMain.handle('get-bullet-library', async () => {
         return { success: true, library };
     } catch (error) {
         console.error('Error loading bullet library:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: error.message, code: error.code || 'LOAD_ERROR' };
     }
 });
 
