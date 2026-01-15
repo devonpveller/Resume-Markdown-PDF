@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     importResume: () => ipcRenderer.invoke('import-resume'),
     createBlank: () => ipcRenderer.invoke('create-blank'),
     resetToWelcome: () => ipcRenderer.invoke('reset-to-welcome'),
+    onShowPreferences: (callback) => ipcRenderer.on('show-preferences', callback),
     isElectron: true
 });
 

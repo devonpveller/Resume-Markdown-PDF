@@ -110,6 +110,16 @@ function createMenu() {
                 },
                 { type: 'separator' },
                 {
+                    label: 'Preferences',
+                    accelerator: 'CmdOrCtrl+,',
+                    click: () => {
+                        if (mainWindow) {
+                            mainWindow.webContents.send('show-preferences');
+                        }
+                    }
+                },
+                { type: 'separator' },
+                {
                     label: 'Exit',
                     accelerator: 'CmdOrCtrl+Q',
                     click: () => {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PagedResumeRenderer from './components/PagedResumeRenderer'
 import { BulletLibraryPanel } from './components/BulletLibraryPanel'
+import { PreferencesModal } from './components/PreferencesModal'
 import './App.css'
 
 function App() {
@@ -19,6 +20,9 @@ function App() {
     const [showViewMenu, setShowViewMenu] = useState(false)
     const [panelWidth, setPanelWidth] = useState(400)
     const [isDragging, setIsDragging] = useState(false)
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'system')
+    const [showPreferences, setShowPreferences] = useState(false)
+    const [showFileMenu, setShowFileMenu] = useState(false)
 
     // Function to load CSS
     const loadCSS = async () => {
@@ -42,6 +46,34 @@ function App() {
         }
     };
 
+    // Theme management
+    useEffect(() => {
+        const applyTheme = (themeName) => {
+            let effectiveTheme = themeName
+
+            if (themeName === 'system') {
+                effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            }
+
+            document.documentElement.setAttribute('data-theme', effectiveTheme)
+        }
+
+        applyTheme(theme)
+        localStorage.setItem('theme', theme)
+
+        // Listen for system theme changes
+        if (theme === 'system') {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+            const handleChange = () => applyTheme('system')
+            mediaQuery.addEventListener('change', handleChange)
+            return () => mediaQuery.removeEventListener('change', handleChange)
+        }
+    }, [theme])
+
+    const handleThemeChange = (newTheme) => {
+        setTheme(newTheme)
+    }
+
     useEffect(() => {
         // Detect if running in Electron
         const hasElectronAPI = window.electronAPI?.isElectron || false
@@ -52,6 +84,13 @@ function App() {
         // Load custom CSS if in Electron
         if (hasElectronAPI) {
             loadCSS();
+
+            // Listen for preferences menu from native Electron menu
+            if (window.electronAPI.onShowPreferences) {
+                window.electronAPI.onShowPreferences(() => {
+                    setShowPreferences(true);
+                });
+            }
         }
     }, [])
 
@@ -389,8 +428,8 @@ function App() {
                         <div className="left-panel no-print" style={{ width: `${panelWidth}px` }}>
                             <BulletLibraryPanel />
                         </div>
-                        <div 
-                            className="resize-handle no-print" 
+                        <div
+                            className="resize-handle no-print"
                             onMouseDown={handleMouseDown}
                             title="Drag to resize"
                         />
@@ -400,6 +439,12 @@ function App() {
                     <PagedResumeRenderer markdown={resumeMarkdown} />
                 </div>
             </div>
+            <PreferencesModal
+                isOpen={showPreferences}
+                onClose={() => setShowPreferences(false)}
+                theme={theme}
+                onThemeChange={handleThemeChange}
+            />
         </div>
     )
 }
