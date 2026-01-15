@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer');
+const { registerHandlers } = require('./ipc-handlers.cjs');
 
 let mainWindow;
 let viteServer;
@@ -580,6 +581,9 @@ ipcMain.handle('export-pdf', async () => {
 
 // App lifecycle
 app.whenReady().then(async () => {
+    // Register bullet library IPC handlers
+    registerHandlers();
+
     createWindow();
 
     // Don't check for resume file - let welcome screen handle it

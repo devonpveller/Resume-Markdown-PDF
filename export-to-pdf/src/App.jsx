@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import PagedResumeRenderer from './components/PagedResumeRenderer'
+import { BulletLibraryPanel } from './components/BulletLibraryPanel'
 import './App.css'
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
     const [customDir, setCustomDir] = useState('')
     const [lastSyncTime, setLastSyncTime] = useState(new Date())
     const [isElectron, setIsElectron] = useState(false)
+    const [showBulletLibrary, setShowBulletLibrary] = useState(false)
 
     // Function to load CSS
     const loadCSS = async () => {
@@ -354,7 +356,20 @@ function App() {
                 <div className="auto-refresh-indicator">
                     🔄 Auto-refreshes when resume.md changes (Last updated: {lastSyncTime.toLocaleTimeString()})
                 </div>
+                {isElectron && (
+                    <button
+                        onClick={() => setShowBulletLibrary(!showBulletLibrary)}
+                        className="bullet-library-toggle"
+                    >
+                        {showBulletLibrary ? 'Hide Bullet Library' : 'Show Bullet Library'}
+                    </button>
+                )}
             </div>
+            {showBulletLibrary && isElectron && (
+                <div className="bullet-library-container">
+                    <BulletLibraryPanel />
+                </div>
+            )}
             <PagedResumeRenderer markdown={resumeMarkdown} />
         </div>
     )
