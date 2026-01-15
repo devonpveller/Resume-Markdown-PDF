@@ -17,6 +17,8 @@ function App() {
     const [isElectron, setIsElectron] = useState(false)
     const [showBulletLibrary, setShowBulletLibrary] = useState(false)
     const [showViewMenu, setShowViewMenu] = useState(false)
+    const [panelWidth, setPanelWidth] = useState(400)
+    const [isDragging, setIsDragging] = useState(false)
 
     // Function to load CSS
     const loadCSS = async () => {
@@ -200,6 +202,35 @@ function App() {
         window.print()
     }
 
+    const handleMouseDown = (e) => {
+        setIsDragging(true)
+        e.preventDefault()
+    }
+
+    const handleMouseMove = (e) => {
+        if (isDragging) {
+            const newWidth = e.clientX
+            if (newWidth >= 300 && newWidth <= 800) {
+                setPanelWidth(newWidth)
+            }
+        }
+    }
+
+    const handleMouseUp = () => {
+        setIsDragging(false)
+    }
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+            }
+        }
+    }, [isDragging])
+
     const handleChangeDir = async () => {
         // In Electron, use native file dialog
         if (isElectron && window.electronAPI && window.electronAPI.selectExportDirectory) {
@@ -354,9 +385,16 @@ function App() {
             {exportMessage && <div className="export-message no-print">{exportMessage}</div>}
             <div className="content-wrapper">
                 {showBulletLibrary && isElectron && (
-                    <div className="left-panel no-print">
-                        <BulletLibraryPanel />
-                    </div>
+                    <>
+                        <div className="left-panel no-print" style={{ width: `${panelWidth}px` }}>
+                            <BulletLibraryPanel />
+                        </div>
+                        <div 
+                            className="resize-handle no-print" 
+                            onMouseDown={handleMouseDown}
+                            title="Drag to resize"
+                        />
+                    </>
                 )}
                 <div className="main-content">
                     <PagedResumeRenderer markdown={resumeMarkdown} />
