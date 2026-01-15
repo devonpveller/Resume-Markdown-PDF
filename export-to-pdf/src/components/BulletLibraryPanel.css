@@ -163,22 +163,24 @@
 
 .bullet-content {
     display: flex;
-    justify-content: space-between;
-    align-items: start;
+    flex-direction: column;
     margin-bottom: 10px;
 }
 
-.bullet-text {
-    flex: 1;
-    margin: 0;
-    font-size: 14px;
+.bullet-section {
+    display: block;
+    font-size: 13px;
+    color: #2196F3;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
-.bullet-section {
-    font-size: 12px;
-    color: #666;
-    font-weight: bold;
-    margin-left: 10px;
+.bullet-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 .bullet-actions {

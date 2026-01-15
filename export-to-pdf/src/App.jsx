@@ -16,6 +16,7 @@ function App() {
     const [lastSyncTime, setLastSyncTime] = useState(new Date())
     const [isElectron, setIsElectron] = useState(false)
     const [showBulletLibrary, setShowBulletLibrary] = useState(false)
+    const [showViewMenu, setShowViewMenu] = useState(false)
 
     // Function to load CSS
     const loadCSS = async () => {
@@ -291,86 +292,76 @@ function App() {
 
     return (
         <div className="app-container">
-            <div className="controls no-print">
+            <div className="menu-bar no-print">
                 <div className="title">
                     Resume Live Preview & Export
                     {isElectron && <span className="electron-badge">Desktop App</span>}
                 </div>
-                <div className="button-group">
+                <div className="menu-items">
                     {isElectron && (
-                        <>
+                        <div className="menu-item">
                             <button
-                                onClick={() => window.electronAPI.openResumeFile()}
-                                className="edit-btn"
-                                title="Open resume.md in your default editor"
+                                className="menu-button"
+                                onClick={() => setShowViewMenu(!showViewMenu)}
                             >
-                                📝 Edit Resume
+                                View ▼
                             </button>
-                            <button
-                                onClick={async () => {
-                                    if (confirm('Are you sure you want to start over? This will delete your current resume.')) {
-                                        await window.electronAPI.resetToWelcome();
-                                    }
-                                }}
-                                className="reset-btn"
-                                title="Return to welcome screen"
-                            >
-                                🔄 Start Over
-                            </button>
-                        </>
-                    )}
-                    <button onClick={handleExport} disabled={exporting} className="export-btn">
-                        {exporting ? 'Exporting...' : 'Export PDF'}
-                    </button>
-                    <div className="export-path-container">
-                        <span className="export-info">Saves to: {exportPath}</span>
-                        <button
-                            onClick={handleChangeDir}
-                            className="change-dir-btn"
-                        >
-                            {isElectron ? 'Choose Folder' : showDirInput ? 'Cancel' : 'Change Directory'}
-                        </button>
-                    </div>
-                    {showDirInput && !isElectron && (
-                        <div className="dir-input-container">
-                            <input
-                                type="text"
-                                value={customDir}
-                                onChange={(e) => setCustomDir(e.target.value)}
-                                placeholder="Enter full directory path (e.g., C:\\Users\\Devon\\Documents)"
-                                className="dir-input"
-                            />
-                            <button onClick={handleChangeDir} className="set-dir-btn">
-                                Set Directory
-                            </button>
+                            {showViewMenu && (
+                                <div className="dropdown-menu">
+                                    <button
+                                        onClick={() => {
+                                            setShowBulletLibrary(!showBulletLibrary);
+                                            setShowViewMenu(false);
+                                        }}
+                                        className="dropdown-item"
+                                    >
+                                        {showBulletLibrary ? '✓' : '  '} Bullet Library
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
-                <button onClick={handlePrint} className="print-btn" title="Note: Creates PDF as images, text is not selectable">
-                    Browser Print
-                </button>
-                <div className="browser-print-warning">
-                    ⚠️ Browser Print creates images only (not ATS-friendly). Use "Export PDF" for text-based PDFs.
-                </div>
-                {exportMessage && <span className="export-message">{exportMessage}</span>}
-                <div className="auto-refresh-indicator">
-                    🔄 Auto-refreshes when resume.md changes (Last updated: {lastSyncTime.toLocaleTimeString()})
-                </div>
-                {isElectron && (
-                    <button
-                        onClick={() => setShowBulletLibrary(!showBulletLibrary)}
-                        className="bullet-library-toggle"
-                    >
-                        {showBulletLibrary ? 'Hide Bullet Library' : 'Show Bullet Library'}
+                    {isElectron && (
+                        <button
+                            onClick={() => window.electronAPI.openResumeFile()}
+                            className="menu-button"
+                            title="Open resume.md in your default editor"
+                        >
+                            📝 Edit
+                        </button>
+                    )}
+                    <button onClick={handleExport} disabled={exporting} className="menu-button export-btn">
+                        {exporting ? 'Exporting...' : '📄 Export PDF'}
                     </button>
-                )}
-            </div>
-            {showBulletLibrary && isElectron && (
-                <div className="bullet-library-container">
-                    <BulletLibraryPanel />
+                    <button onClick={handlePrint} className="menu-button" title="Note: Creates PDF as images, text is not selectable">
+                        🖨️ Print
+                    </button>
+                    {isElectron && (
+                        <button
+                            onClick={async () => {
+                                if (confirm('Are you sure you want to start over? This will delete your current resume.')) {
+                                    await window.electronAPI.resetToWelcome();
+                                }
+                            }}
+                            className="menu-button reset-btn"
+                            title="Return to welcome screen"
+                        >
+                            🔄 Reset
+                        </button>
+                    )}
                 </div>
-            )}
-            <PagedResumeRenderer markdown={resumeMarkdown} />
+            </div>
+            {exportMessage && <div className="export-message no-print">{exportMessage}</div>}
+            <div className="content-wrapper">
+                {showBulletLibrary && isElectron && (
+                    <div className="left-panel no-print">
+                        <BulletLibraryPanel />
+                    </div>
+                )}
+                <div className="main-content">
+                    <PagedResumeRenderer markdown={resumeMarkdown} />
+                </div>
+            </div>
         </div>
     )
 }

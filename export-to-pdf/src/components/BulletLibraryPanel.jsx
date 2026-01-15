@@ -292,10 +292,10 @@ export function BulletLibraryPanel() {
                     {filteredBullets.map(bullet => (
                         <li key={bullet.id} className="bullet-item">
                             <div className="bullet-content">
-                                <p className="bullet-text">{bullet.text}</p>
                                 <span className="bullet-section">
                                     {bullet.parentHeader?.sectionHeader || bullet.parentHeader?.headerText}
                                 </span>
+                                <p className="bullet-text">{bullet.text}</p>
                             </div>
 
                             <div className="bullet-actions">
