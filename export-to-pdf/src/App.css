@@ -3,6 +3,20 @@
 @import url('../public/resume.css');
 @import url('../public/settings.css');
 
+/* Prevent page-level scroll */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+#root {
+    height: 100%;
+    overflow: hidden;
+}
+
 /* Theme Variables */
 :root[data-theme="light"] {
     --bg-primary: #ffffff;
