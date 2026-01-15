@@ -42,5 +42,8 @@ contextBridge.exposeInMainWorld('bulletLibrary', {
     getJobPost: (filename) => ipcRenderer.invoke('jobPost:get', filename),
     listJobPosts: () => ipcRenderer.invoke('jobPost:list'),
     deleteJobPost: (filename) => ipcRenderer.invoke('jobPost:delete', filename),
-    extractJobContext: (filename) => ipcRenderer.invoke('jobPost:extractContext', filename)
+    extractJobContext: (filename) => ipcRenderer.invoke('jobPost:extractContext', filename),
+
+    // Resume import
+    importFromResume: (markdownContent) => ipcRenderer.invoke('bullet:importFromResume', markdownContent)
 });

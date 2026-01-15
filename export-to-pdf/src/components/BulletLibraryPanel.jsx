@@ -43,6 +43,43 @@ export function BulletLibraryPanel() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [selectedJobPost, setSelectedJobPost] = useState('');
     const [jobContext, setJobContext] = useState(null);
+    const [importing, setImporting] = useState(false);
+    const [importError, setImportError] = useState(null);
+
+    /**
+     * Handle importing bullets from current resume
+     */
+    const handleImportFromResume = async () => {
+        try {
+            setImporting(true);
+            setImportError(null);
+
+            // Read current resume content
+            const resumeData = await window.electronAPI.readResume();
+            if (!resumeData.success) {
+                throw new Error('Failed to read resume');
+            }
+
+            // Import bullets and headers
+            const result = await window.bulletLibrary.importFromResume(resumeData.content);
+
+            if (result.success) {
+                // Refresh the library
+                await refresh();
+
+                // Show success message
+                const { headers: importedHeaders, bullets: importedBullets } = result.data;
+                alert(`Import successful!\nHeaders: ${importedHeaders.length}\nBullets: ${importedBullets.length}`);
+            } else {
+                throw new Error(result.error || 'Import failed');
+            }
+        } catch (err) {
+            setImportError(err.message);
+            console.error('Import error:', err);
+        } finally {
+            setImporting(false);
+        }
+    };
 
     /**
      * Handle adding new bullet
@@ -121,10 +158,30 @@ export function BulletLibraryPanel() {
         <div className="bullet-library-panel">
             <header className="panel-header">
                 <h2>Bullet Library</h2>
-                <button onClick={refresh} aria-label="Refresh">
-                    Refresh
-                </button>
+                <div className="header-actions">
+                    <button
+                        onClick={handleImportFromResume}
+                        disabled={importing}
+                        className="import-btn"
+                        aria-label="Import from Resume"
+                    >
+                        {importing ? 'Importing...' : 'Import from Current Resume'}
+                    </button>
+                    <button onClick={refresh} aria-label="Refresh">
+                        Refresh
+                    </button>
+                </div>
             </header>
+
+            {/* Import Error Display */}
+            {importError && (
+                <div className="error-container">
+                    <p className="error-message">{importError}</p>
+                    <button onClick={() => setImportError(null)} aria-label="Dismiss">
+                        Dismiss
+                    </button>
+                </div>
+            )}
 
             {/* Filter and Search Controls */}
             <div className="controls">
@@ -136,9 +193,9 @@ export function BulletLibraryPanel() {
                         onChange={(e) => setFilterSection(e.target.value)}
                     >
                         <option value="all">All Sections</option>
-                        {headers.filter(h => h.level === 2).map(header => (
+                        {headers.map(header => (
                             <option key={header.id} value={header.text}>
-                                {header.text}
+                                {header.level === 3 ? `  ↳ ${header.text}` : header.text}
                             </option>
                         ))}
                     </select>
@@ -208,9 +265,9 @@ export function BulletLibraryPanel() {
                             onChange={(e) => setNewBulletSection(e.target.value)}
                         >
                             <option value="">Select Section</option>
-                            {headers.filter(h => h.level === 2).map(header => (
+                            {headers.map(header => (
                                 <option key={header.id} value={header.text}>
-                                    {header.text}
+                                    {header.level === 3 ? `  ↳ ${header.text}` : header.text}
                                 </option>
                             ))}
                         </select>

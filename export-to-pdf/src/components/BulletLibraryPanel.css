@@ -23,6 +23,32 @@
     font-size: 24px;
 }
 
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.import-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.import-btn:hover:not(:disabled) {
+    background: #45a049;
+}
+
+.import-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
 .controls {
     display: flex;
     gap: 20px;

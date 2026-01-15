@@ -60,7 +60,8 @@ function parseMarkdown(markdown) {
         return { headers: [], bullets: [] };
     }
 
-    const lines = markdown.split('\n');
+    // Handle both Unix (LF) and Windows (CRLF) line endings
+    const lines = markdown.split(/\r?\n/);
     const headers = [];
     const bullets = [];
 
@@ -179,6 +180,6 @@ function parseMarkdown(markdown) {
     };
 }
 
-module.exports = {
+export {
     parseMarkdown
 };

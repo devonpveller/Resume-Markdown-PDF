@@ -273,6 +273,99 @@ function registerHandlers() {
             return errorResponse(error);
         }
     });
+
+    // ============ Resume Parsing/Import ============
+
+    ipcMain.handle('bullet:importFromResume', async (event, markdownContent) => {
+        try {
+            console.log('Import handler received markdown, length:', markdownContent.length);
+            console.log('First 500 chars:', markdownContent.substring(0, 500));
+
+            // Dynamic import for ES module
+            const { parseMarkdown } = await import('../src/components/bullet-parser.js');
+            const parsed = parseMarkdown(markdownContent);
+
+            console.log('Parser found:', parsed.headers.length, 'headers,', parsed.bullets.length, 'bullets');
+            if (parsed.bullets.length > 0) {
+                console.log('First bullet:', parsed.bullets[0]);
+            }
+
+            const results = {
+                headers: [],
+                bullets: [],
+                errors: []
+            };
+
+            // Add headers
+            for (const header of parsed.headers) {
+                try {
+                    const result = headerManager.addHeader({
+                        level: header.level,
+                        text: header.text,
+                        parentHeaderId: header.parentId || null,
+                        dateRange: header.dateRange || null
+                    });
+                    results.headers.push(result.header);
+                } catch (error) {
+                    results.errors.push({ type: 'header', text: header.text, error: error.message });
+                }
+            }
+
+            // Add bullets
+            console.log(`Processing ${parsed.bullets.length} bullets...`);
+            for (const bullet of parsed.bullets) {
+                try {
+                    // Find parent header in the NEWLY CREATED headers (results.headers), not parsed.headers
+                    // Parser generates new IDs each time, so parentHeaderId won't match
+                    // Use section context to match by text instead
+                    let parentHeader = null;
+
+                    if (bullet.sectionContext) {
+                        // Try to find H3 header first (more specific)
+                        if (bullet.sectionContext.h3Text) {
+                            parentHeader = results.headers.find(h => h.text === bullet.sectionContext.h3Text && h.level === 3);
+                        }
+                        // Fall back to H2 header if no H3 found
+                        if (!parentHeader && bullet.sectionContext.h2Text) {
+                            parentHeader = results.headers.find(h => h.text === bullet.sectionContext.h2Text && h.level === 2);
+                        }
+                    }
+
+                    if (parentHeader) {
+                        const result = bulletManager.addBullet({
+                            text: bullet.text,
+                            parentHeader: {
+                                headerId: parentHeader.id,
+                                headerText: parentHeader.text,
+                                headerLevel: parentHeader.level
+                            },
+                            sourceResume: 'current'
+                        });
+                        if (result.success) {
+                            results.bullets.push(result.bullet);
+                        } else if (result.duplicate) {
+                            console.log('Duplicate bullet skipped:', bullet.text.substring(0, 50));
+                        }
+                    } else {
+                        console.warn('No parent header found for bullet:', {
+                            bulletText: bullet.text.substring(0, 50),
+                            sectionContext: bullet.sectionContext,
+                            availableHeaders: results.headers.map(h => ({ text: h.text, level: h.level }))
+                        });
+                        results.errors.push({ type: 'bullet', text: bullet.text.substring(0, 100), error: 'No parent header found' });
+                    }
+                } catch (error) {
+                    console.error('Error adding bullet:', error);
+                    results.errors.push({ type: 'bullet', text: bullet.text.substring(0, 100), error: error.message });
+                }
+            }
+            console.log(`Successfully imported ${results.bullets.length} bullets`);
+
+            return successResponse(results);
+        } catch (error) {
+            return errorResponse(error);
+        }
+    });
 }
 
 module.exports = {
